@@ -169,9 +169,7 @@ async function copyEmail(): Promise<void> {
 
           <label style="margin-top: 10px;">Dank zin</label>
           <textarea v-model="request.ending.thanksLine"></textarea>
-
-          <label style="margin-top: 10px;">Afzender</label>
-          <input v-model="request.senderName" />
+          
         </div>
       </div>
 
