@@ -210,14 +210,11 @@ async function copyEmail(): Promise<void> {
           </div>
 
           <div class="two" style="margin-top: 10px;">
-            <div>
-              <label>Postcode</label>
-              <input v-model="request.location.postalCode" placeholder="9000" />
+            <div style="margin-top: 10px;">
+              <label>Postcode + Stad</label>
+              <input v-model="request.location.postalCity" placeholder="9000 Gent" />
             </div>
-            <div>
-              <label>Stad</label>
-              <input v-model="request.location.city" placeholder="Gent" />
-            </div>
+
           </div>
 
           <label style="margin-top: 10px;">Opmerking installatieplaats</label>
@@ -232,15 +229,23 @@ async function copyEmail(): Promise<void> {
               <input v-model="request.contact.name" placeholder="Dhr. Van Der Vaert" />
             </div>
             <div>
-              <label>Telefoon</label>
-              <input v-model="request.contact.phone" placeholder="+32 470 00 11 23" />
+              <label>Tel</label>
+              <input v-model="request.contact.tel" placeholder="+32 9 335 61 35" />
             </div>
           </div>
 
-          <div style="margin-top: 10px;">
-            <label>Email</label>
-            <input v-model="request.contact.email" placeholder="naam@bedrijf.be" />
+          <div class="two" style="margin-top: 10px;">
+            <div>
+              <label>GSM</label>
+              <input v-model="request.contact.gsm" placeholder="+32 470 00 11 23" />
+            </div>
+            <div>
+              <label>Email</label>
+              <input v-model="request.contact.email" placeholder="naam@bedrijf.be" />
+            </div>
           </div>
+
+
         </div>
 
 

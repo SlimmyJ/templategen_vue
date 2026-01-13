@@ -34,13 +34,14 @@ export type InstallationDetails = {
 export type LocationInfo = {
   name: string;
   street: string;
-  postalCode: string;
-  city: string;
+  postalCity: string;
+ 
 };
 
 export type ContactInfo = {
   name: string;
-  phone: string;
+  tel: string;
+  gsm: string;
   email: string;
 };
 
@@ -110,7 +111,7 @@ installation: {
 
     notes: {
       vehicleNotes: "",
-      installationPlaceLine: "Installatieplaats: te verifieren met klant",
+      installationPlaceLine: "Installatieplaats: te verifiëren met klant",
       installationPlaceNotes: ""
     },
 
@@ -120,16 +121,16 @@ installation: {
   plain: ""
 }, 
 
-    location: {
-      name: "",
-      street: "",
-      postalCode: "",
-      city: ""
-    },
+location: {
+  name: "",
+  street: "",
+  postalCity: ""
+},
 
 contact: {
   name: "",
-  phone: "",
+  tel: "",
+  gsm: "",
   email: ""
 },
 

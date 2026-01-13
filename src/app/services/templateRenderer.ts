@@ -20,14 +20,13 @@ export class TemplateRenderer implements ITemplateRenderer {
 
   private buildSubject(r: InstallationRequest): string {
     const details = r.installation.detailsText.trim();
-    const city = r.location.city.trim();
-    const name = r.intro.salutationName.trim();
+    const city = r.location.postalCity.trim();
+  
 
     const left = details.length > 0 ? details : "Installatie";
-    const middle = name.length > 0 ? name : "Klant";
     const right = city.length > 0 ? city : "";
 
-    const subject = `Installatie inplannen - ${left} - ${middle}${right.length > 0 ? " - " + right : ""}`;
+    const subject = `Installatie inplannen - ${left}  ${right.length > 0 ? " - " + right : ""}`;
     return subject.trim();
   }
 
@@ -65,8 +64,8 @@ export class TemplateRenderer implements ITemplateRenderer {
     lines.push(`- Locatie: ${r.location.name}`);
     lines.push("");
     lines.push(`  ${r.location.street}`);
-    lines.push(`  ${(`${r.location.postalCode} ${r.location.city}`).trim()}`);
-lines.push("");
+    lines.push(`  ${(`${r.location.postalCity}`).trim()}`);
+    lines.push("");
     if (r.notes.installationPlaceNotes.trim().length > 0) {
       lines.push(`- Opmerking: ${r.notes.installationPlaceNotes.trim()}`);
     }
@@ -75,10 +74,14 @@ lines.push("");
     lines.push("Contactpersoon");
     lines.push("");
     lines.push(`- Naam: ${r.contact.name}`);
-    lines.push(`- GSM: ${r.contact.phone}`);
+    if (r.contact.tel.trim().length > 0) {
+      lines.push(`- Tel: ${r.contact.tel.trim()}`);
+    }
+    if (r.contact.gsm.trim().length > 0) {
+      lines.push(`- GSM: ${r.contact.gsm.trim()}`);
+    }
     if (r.contact.email.trim().length > 0) {
-      lines.push("");
-      lines.push(`- Email: ${r.contact.email}`);
+      lines.push(`- E: ${r.contact.email.trim()}`);
     }
     lines.push("");
 
@@ -95,8 +98,9 @@ lines.push("");
     const html: string[] = [];
 
     html.push(`<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #111;">`);
-html.push(`<p style="margin: 0 0 12px 0;">${this.htmlEncode(this.buildGreeting(r))}</p>`);
-html.push(`<p style="margin: 0 0 16px 0;">${this.htmlEncode(r.intro.requestLine.trim())}</p>`);
+    html.push(`<p style="margin: 0 0 12px 0;">${this.htmlEncode(this.buildGreeting(r))}</p>`);
+    html.push(`<br>`); 
+    html.push(`<p style="margin: 0 0 16px 0;">${this.htmlEncode(r.intro.requestLine.trim())}</p>`);
 
 
 
@@ -113,19 +117,19 @@ html.push(`<p style="margin: 0 0 16px 0;">${this.htmlEncode(r.intro.requestLine.
 
     html.push(this.sectionTitle("Voertuiggegevens", color));
 
-if (r.vehicleTable.html.trim().length > 0) {
-  html.push(r.vehicleTable.html);
-} else if (r.vehicles.length > 0) {
-  html.push(`<ul style="margin-top: 6px;">`);
-  for (const v of r.vehicles) {
-    html.push(`<li>${this.htmlEncode(this.formatVehicleLine(v))}</li>`);
-  }
-  html.push(`</ul>`);
-}
+    if (r.vehicleTable.html.trim().length > 0) {
+      html.push(r.vehicleTable.html);
+    } else if (r.vehicles.length > 0) {
+      html.push(`<ul style="margin-top: 6px;">`);
+      for (const v of r.vehicles) {
+        html.push(`<li>${this.htmlEncode(this.formatVehicleLine(v))}</li>`);
+      }
+      html.push(`</ul>`);
+    }
 
-if (r.notes.vehicleNotes.trim().length > 0) {
-  html.push(`<div style="margin-top: 6px;"><strong>Opmerking:</strong> ${this.htmlEncode(r.notes.vehicleNotes.trim())}</div>`);
-}
+    if (r.notes.vehicleNotes.trim().length > 0) {
+      html.push(`<div style="margin-top: 6px;"><strong>Opmerking:</strong> ${this.htmlEncode(r.notes.vehicleNotes.trim())}</div>`);
+    }
 
 
     const placeTitle = r.notes.installationPlaceLine.trim().length > 0 ? r.notes.installationPlaceLine.trim() : "Installatieplaats";
@@ -133,7 +137,7 @@ if (r.notes.vehicleNotes.trim().length > 0) {
     html.push(`<div style="margin-top: 6px;">`);
     html.push(`<div><strong>Locatie:</strong> ${this.htmlEncode(r.location.name)}</div>`);
     html.push(`<div>${this.htmlEncode(r.location.street)}</div>`);
-    html.push(`<div>${this.htmlEncode((`${r.location.postalCode} ${r.location.city}`).trim())}</div>`);
+    html.push(`<div>${this.htmlEncode((`${r.location.postalCity}`).trim())}</div>`);
     html.push(`</div>`);
 
     if (r.notes.installationPlaceNotes.trim().length > 0) {
@@ -143,16 +147,24 @@ if (r.notes.vehicleNotes.trim().length > 0) {
     html.push(this.sectionTitle("Contactpersoon", color));
     html.push(`<div style="margin-top: 6px;">`);
     html.push(`<div><strong>Naam:</strong> ${this.htmlEncode(r.contact.name)}</div>`);
-    html.push(`<div><strong>GSM:</strong> ${this.htmlEncode(r.contact.phone)}</div>`);
+
+    if (r.contact.tel.trim().length > 0) {
+      html.push(`<div><strong>Tel:</strong> ${this.htmlEncode(r.contact.tel.trim())}</div>`);
+    }
+    if (r.contact.gsm.trim().length > 0) {
+      html.push(`<div><strong>GSM:</strong> ${this.htmlEncode(r.contact.gsm.trim())}</div>`);
+    }
     if (r.contact.email.trim().length > 0) {
       const email = r.contact.email.trim();
-      html.push(`<div><strong>Email:</strong> <a href="mailto:${this.htmlEncode(email)}" style="color:${color}; text-decoration:none;"><strong>${this.htmlEncode(email)}</strong></a></div>`);
+      html.push(`<div><strong>E:</strong> <a href="mailto:${this.htmlEncode(email)}" style="color:${color}; text-decoration:none;"><strong>${this.htmlEncode(email)}</strong></a></div>`);
     }
+        html.push(`<br>`); 
     html.push(`</div>`);
 
     html.push(`<p style="margin-top: 12px;"><strong>${this.htmlEncode(r.ending.confirmLine.trim())}</strong></p>`);
+        html.push(`<br>`); 
     html.push(`<p>${this.htmlEncode(r.ending.thanksLine.trim())}</p>`);
-  
+
     return html.join("").trim();
   }
 
@@ -178,10 +190,10 @@ if (r.notes.vehicleNotes.trim().length > 0) {
 
     const power =
       v.powertrain === PowertrainType.Electric ? "elektrisch" :
-      v.powertrain === PowertrainType.Diesel ? "diesel" :
-      v.powertrain === PowertrainType.Petrol ? "benzine" :
-      v.powertrain === PowertrainType.Hybrid ? "hybride" :
-      "onbekend";
+        v.powertrain === PowertrainType.Diesel ? "diesel" :
+          v.powertrain === PowertrainType.Petrol ? "benzine" :
+            v.powertrain === PowertrainType.Hybrid ? "hybride" :
+              "onbekend";
 
     const name = `${v.brand} ${v.model}`.trim().length > 0 ? `${v.brand} ${v.model}`.trim() : "Voertuig";
     const plate = v.licensePlate.trim().length > 0 ? ` - ${v.licensePlate.trim()}` : "";
@@ -189,8 +201,8 @@ if (r.notes.vehicleNotes.trim().length > 0) {
     return `${name} (${qty}x, ${power})${plate}`;
   }
 
-private sectionTitle(title: string, color: string): string {
-  return `
+  private sectionTitle(title: string, color: string): string {
+    return `
     <p>&nbsp;</p>
     <div style="
       margin-top: 6px;
@@ -203,7 +215,7 @@ private sectionTitle(title: string, color: string): string {
       ${this.htmlEncode(title)}
     </div>
   `;
-}
+  }
 
 
   private htmlEncode(value: string): string {
