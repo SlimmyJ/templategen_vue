@@ -1,0 +1,13 @@
+.preview {
+  background: #ffffff;
+  color: #111111;
+  border: 1px solid #cfcfcf;
+  border-radius: 2px;
+  padding: 10px;
+}
+
+.small {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 10px;
+}

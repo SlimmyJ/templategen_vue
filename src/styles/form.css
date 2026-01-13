@@ -1,0 +1,127 @@
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+input, select, textarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 2px;
+  padding: 6px 8px;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+
+input {
+  height: 28px;
+}
+
+select {
+  height: 30px;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #6c8ebf;
+}
+
+button {
+  border: 1px solid #aaaaaa;
+  background: #e3e3e3;
+  color: #000000;
+  padding: 7px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+  background: #808080;
+  color: #ffffff;
+}
+
+button:active {
+  position: relative;
+  top: 1px;
+}
+
+button.primary {
+  background: #3d50b5;
+  border-color: #2e3fa1;
+  color: #ffffff;
+}
+
+button.primary:hover {
+  background: #2e3fa1;
+  color: #ffffff;
+}
+
+.vehicle-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 0.6fr 0.9fr 1fr;
+  gap: 10px;
+}
+
+.section {
+  border-top: 1px solid #d7d7d7;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.section:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.section-title {
+  background: var(--bar-blue);
+  color: var(--bar-blue-text);
+  padding: 6px 10px;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  margin-bottom: 10px;
+}
+
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Small delete button in vehicle rows */
+.vehicle-row button {
+  width: 34px;
+  padding: 0;
+}
+
+.salutation-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+}
+
+.salutation-prefix {
+  background: #efefef;
+  color: #666666;
+}
