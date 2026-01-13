@@ -73,7 +73,7 @@ export type InstallationRequest = {
 export function createDefaultRequest(): InstallationRequest {
   return {
     customerName: "",
-    senderName: "Simon",
+    senderName: "Sven Paelman",
     brandPrimaryColorHex: "#C20E1A",
 
 intro: {

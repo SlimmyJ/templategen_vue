@@ -71,18 +71,16 @@ export class TemplateRenderer implements ITemplateRenderer {
 
     lines.push("Contactpersoon");
     lines.push(`- Naam: ${r.contact.name}`);
-    lines.push(`- G: ${r.contact.phone}`);
+    lines.push(`- GSM: ${r.contact.phone}`);
     if (r.contact.email.trim().length > 0) {
-      lines.push(`- E: ${r.contact.email}`);
+      lines.push(`- Email: ${r.contact.email}`);
     }
     lines.push("");
 
     lines.push(r.ending.confirmLine.trim());
     lines.push("");
     lines.push(r.ending.thanksLine.trim());
-    lines.push("");
-    lines.push("Met vriendelijke groeten,");
-    lines.push(r.senderName);
+
 
     return lines.join("\n").trimEnd();
   }
