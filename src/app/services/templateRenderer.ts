@@ -40,6 +40,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     lines.push("");
 
     lines.push("Datum installatie");
+    lines.push("");
     lines.push(`- Datum: ${this.formatDate(r)}`);
     lines.push(`- Tijd: ${this.formatTime(r)}`);
     lines.push("");
@@ -60,19 +61,23 @@ export class TemplateRenderer implements ITemplateRenderer {
     lines.push("");
 
     lines.push(r.notes.installationPlaceLine.trim().length > 0 ? r.notes.installationPlaceLine.trim() : "Installatieplaats");
+    lines.push("");
     lines.push(`- Locatie: ${r.location.name}`);
+    lines.push("");
     lines.push(`  ${r.location.street}`);
     lines.push(`  ${(`${r.location.postalCode} ${r.location.city}`).trim()}`);
-
+lines.push("");
     if (r.notes.installationPlaceNotes.trim().length > 0) {
       lines.push(`- Opmerking: ${r.notes.installationPlaceNotes.trim()}`);
     }
     lines.push("");
 
     lines.push("Contactpersoon");
+    lines.push("");
     lines.push(`- Naam: ${r.contact.name}`);
     lines.push(`- GSM: ${r.contact.phone}`);
     if (r.contact.email.trim().length > 0) {
+      lines.push("");
       lines.push(`- Email: ${r.contact.email}`);
     }
     lines.push("");
@@ -91,8 +96,10 @@ export class TemplateRenderer implements ITemplateRenderer {
 
     html.push(`<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #111;">`);
 
-    html.push(`<p>${this.htmlEncode(this.buildGreeting(r))}</p>`);
-    html.push(`<p>${this.htmlEncode(r.intro.requestLine.trim())}</p>`);
+  html.push(`<p>${this.htmlEncode(this.buildGreeting(r))}</p>`);
+
+html.push(`<p>${this.htmlEncode(r.intro.requestLine.trim())}</p>`);
+
 
     html.push(this.sectionTitle("Datum installatie", color));
     html.push(`<ul style="margin-top: 6px;">`);
@@ -106,17 +113,21 @@ export class TemplateRenderer implements ITemplateRenderer {
     }
 
     html.push(this.sectionTitle("Voertuiggegevens", color));
-    if (r.vehicles.length > 0) {
-      html.push(`<ul style="margin-top: 6px;">`);
-      for (const v of r.vehicles) {
-        html.push(`<li>${this.htmlEncode(this.formatVehicleLine(v))}</li>`);
-      }
-      html.push(`</ul>`);
-    }
 
-    if (r.notes.vehicleNotes.trim().length > 0) {
-      html.push(`<div style="margin-top: 6px;"><strong>Opmerking:</strong> ${this.htmlEncode(r.notes.vehicleNotes.trim())}</div>`);
-    }
+if (r.vehicleTable.html.trim().length > 0) {
+  html.push(r.vehicleTable.html);
+} else if (r.vehicles.length > 0) {
+  html.push(`<ul style="margin-top: 6px;">`);
+  for (const v of r.vehicles) {
+    html.push(`<li>${this.htmlEncode(this.formatVehicleLine(v))}</li>`);
+  }
+  html.push(`</ul>`);
+}
+
+if (r.notes.vehicleNotes.trim().length > 0) {
+  html.push(`<div style="margin-top: 6px;"><strong>Opmerking:</strong> ${this.htmlEncode(r.notes.vehicleNotes.trim())}</div>`);
+}
+
 
     const placeTitle = r.notes.installationPlaceLine.trim().length > 0 ? r.notes.installationPlaceLine.trim() : "Installatieplaats";
     html.push(this.sectionTitle(placeTitle, color));
@@ -133,20 +144,16 @@ export class TemplateRenderer implements ITemplateRenderer {
     html.push(this.sectionTitle("Contactpersoon", color));
     html.push(`<div style="margin-top: 6px;">`);
     html.push(`<div><strong>Naam:</strong> ${this.htmlEncode(r.contact.name)}</div>`);
-    html.push(`<div><strong>G:</strong> ${this.htmlEncode(r.contact.phone)}</div>`);
+    html.push(`<div><strong>GSM:</strong> ${this.htmlEncode(r.contact.phone)}</div>`);
     if (r.contact.email.trim().length > 0) {
       const email = r.contact.email.trim();
-      html.push(`<div><strong>E:</strong> <a href="mailto:${this.htmlEncode(email)}" style="color:${color}; text-decoration:none;"><strong>${this.htmlEncode(email)}</strong></a></div>`);
+      html.push(`<div><strong>Email:</strong> <a href="mailto:${this.htmlEncode(email)}" style="color:${color}; text-decoration:none;"><strong>${this.htmlEncode(email)}</strong></a></div>`);
     }
     html.push(`</div>`);
 
     html.push(`<p style="margin-top: 12px;"><strong>${this.htmlEncode(r.ending.confirmLine.trim())}</strong></p>`);
     html.push(`<p>${this.htmlEncode(r.ending.thanksLine.trim())}</p>`);
-
-    html.push(`<p>Met vriendelijke groeten,</p>`);
-    html.push(`<p style="margin: 0;"><strong>${this.htmlEncode(r.senderName)}</strong></p>`);
-    html.push(`</div>`);
-
+  
     return html.join("").trim();
   }
 
@@ -183,9 +190,22 @@ export class TemplateRenderer implements ITemplateRenderer {
     return `${name} (${qty}x, ${power})${plate}`;
   }
 
-  private sectionTitle(title: string, color: string): string {
-    return `<div style="margin-top: 14px; padding: 8px 10px; border-left: 4px solid ${color}; background: #f7f7f7;"><strong>${this.htmlEncode(title)}</strong></div>`;
-  }
+private sectionTitle(title: string, color: string): string {
+  return `
+    <p>&nbsp;</p>
+    <div style="
+      margin-top: 6px;
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      border-left: 4px solid ${color};
+      background: #f7f7f7;
+      font-weight: bold;
+    ">
+      ${this.htmlEncode(title)}
+    </div>
+  `;
+}
+
 
   private htmlEncode(value: string): string {
     return value

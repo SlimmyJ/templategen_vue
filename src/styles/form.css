@@ -125,3 +125,33 @@ button.primary:hover {
   background: #efefef;
   color: #666666;
 }
+
+
+.dropzone {
+  border: 1px dashed #777;
+  background: #f3f3f3;
+  padding: 10px;
+}
+
+.dropzone-title {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.dropzone-sub {
+  font-size: 11px;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.paste-area {
+  min-height: 60px;
+  border: 1px solid #a9a9a9;
+  background: #ffffff;
+  padding: 8px;
+  outline: none;
+}
+
+.file-input {
+  font-size: 11px;
+}

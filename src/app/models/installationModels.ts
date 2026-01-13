@@ -16,6 +16,12 @@ export type VehicleLine = {
   licensePlate: string;
 };
 
+export type VehicleTable = {
+  source: "none" | "html" | "text" | "file";
+  html: string;
+  plain: string;
+};
+
 export type PlanningInfo = {
   plannedDate: string;
   plannedTime: string;
@@ -68,6 +74,7 @@ export type InstallationRequest = {
   customerName: string;
   senderName: string;
   brandPrimaryColorHex: string;
+    vehicleTable: VehicleTable;
 };
 
 export function createDefaultRequest(): InstallationRequest {
@@ -106,6 +113,12 @@ installation: {
       installationPlaceLine: "Installatieplaats: te verifieren met klant",
       installationPlaceNotes: ""
     },
+
+   vehicleTable: {
+  source: "none",
+  html: "",
+  plain: ""
+}, 
 
     location: {
       name: "",

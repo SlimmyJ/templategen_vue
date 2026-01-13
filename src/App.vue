@@ -4,6 +4,62 @@ import { createDefaultRequest, PowertrainType } from "./app/models/installationM
 import { TemplateRenderer } from "./app/services/templateRenderer";
 import { ClipboardService } from "./app/services/clipboardService";
 
+
+import { TableImportService } from "./app/services/tableImportService";
+
+const tableImport = new TableImportService();
+
+function onVehiclePaste(e: ClipboardEvent): void {
+  e.preventDefault();
+
+  const html = e.clipboardData?.getData("text/html") ?? "";
+  const plain = e.clipboardData?.getData("text/plain") ?? "";
+
+  const parsed = tableImport.fromClipboard(html, plain);
+  request.vehicleTable.source = html.trim().length > 0 ? "html" : "text";
+  request.vehicleTable.html = parsed.html;
+  request.vehicleTable.plain = parsed.plain;
+}
+
+async function onVehicleFileSelected(e: Event): Promise<void> {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const text = await file.text();
+  const parsed = tableImport.fromCsvFileContent(text);
+
+  request.vehicleTable.source = "file";
+  request.vehicleTable.html = parsed.html;
+  request.vehicleTable.plain = parsed.plain;
+
+  input.value = "";
+}
+
+function onVehicleDrop(e: DragEvent): void {
+  e.preventDefault();
+  const file = e.dataTransfer?.files?.[0];
+  if (!file) return;
+
+  file.text().then(text => {
+    const parsed = tableImport.fromCsvFileContent(text);
+    request.vehicleTable.source = "file";
+    request.vehicleTable.html = parsed.html;
+    request.vehicleTable.plain = parsed.plain;
+  });
+}
+
+function onVehicleDragOver(e: DragEvent): void {
+  e.preventDefault();
+}
+
+function clearVehicleTable(): void {
+  request.vehicleTable.source = "none";
+  request.vehicleTable.html = "";
+  request.vehicleTable.plain = "";
+}
+
+
 const request = reactive(createDefaultRequest());
 
 const renderer = new TemplateRenderer();
@@ -84,35 +140,60 @@ async function copyEmail(): Promise<void> {
 </div>
 
         <div class="section">
-          <div class="section-title">Voertuiggegevens</div>
+  <div class="section-title">Voertuiggegevens</div>
 
-          <div
-            v-for="(v, index) in request.vehicles"
-            :key="index"
-            class="vehicle-row"
-            style="margin-bottom: 10px;"
-          >
-            <input v-model="v.brand" placeholder="Merk" />
-            <input v-model="v.model" placeholder="Model" />
-            <input type="number" min="1" v-model.number="v.quantity" />
-            <select v-model="v.powertrain">
-              <option :value="PowertrainType.Unknown">Onbekend</option>
-              <option :value="PowertrainType.Electric">Elektrisch</option>
-              <option :value="PowertrainType.Diesel">Diesel</option>
-              <option :value="PowertrainType.Petrol">Benzine</option>
-              <option :value="PowertrainType.Hybrid">Hybride</option>
-            </select>
-            <input v-model="v.licensePlate" placeholder="Kenteken" />
-            <button type="button" @click="removeVehicle(index)">X</button>
-          </div>
+  <div class="dropzone" @drop="onVehicleDrop" @dragover="onVehicleDragOver">
+    <div class="dropzone-title">Tabel plakken of CSV droppen</div>
+    <div class="dropzone-sub">Plak hier (Ctrl+V) vanuit Excel of Outlook, of sleep een .csv bestand</div>
 
-          <div class="actions">
-            <button type="button" @click="addVehicle">Voeg voertuig toe</button>
-          </div>
+    <div
+      class="paste-area"
+      contenteditable="true"
+      @paste="onVehiclePaste"
+    ></div>
 
-          <label style="margin-top: 10px;">Opmerking voertuigen</label>
-          <textarea v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
-        </div>
+    <div class="actions">
+      <input class="file-input" type="file" accept=".csv,text/csv" @change="onVehicleFileSelected" />
+      <button type="button" @click="clearVehicleTable">Tabel wissen</button>
+    </div>
+  </div>
+
+  <label style="margin-top: 10px;">Opmerking voertuigen</label>
+  <textarea v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
+
+  <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px;">
+    <div class="hint">Geen tabel ingeplakt. Je kan nog altijd losse voertuiglijnen gebruiken.</div>
+
+    <div
+      v-for="(v, index) in request.vehicles"
+      :key="index"
+      class="vehicle-row"
+      style="margin-bottom: 10px;"
+    >
+      <input v-model="v.brand" placeholder="Merk" />
+      <input v-model="v.model" placeholder="Model" />
+      <input type="number" min="1" v-model.number="v.quantity" />
+      <select v-model="v.powertrain">
+        <option :value="PowertrainType.Unknown">Onbekend</option>
+        <option :value="PowertrainType.Electric">Elektrisch</option>
+        <option :value="PowertrainType.Diesel">Diesel</option>
+        <option :value="PowertrainType.Petrol">Benzine</option>
+        <option :value="PowertrainType.Hybrid">Hybride</option>
+      </select>
+      <input v-model="v.licensePlate" placeholder="Kenteken" />
+      <button type="button" @click="removeVehicle(index)">X</button>
+    </div>
+
+    <div class="actions">
+      <button type="button" @click="addVehicle">Voeg voertuig toe</button>
+    </div>
+  </div>
+
+  <div v-else style="margin-top: 10px;">
+    <div class="hint">Tabel is actief en wordt meegenomen in de preview en in de kopie.</div>
+  </div>
+</div>
+
 
         <div class="section">
           <div class="section-title">Installatieplaats</div>
@@ -169,7 +250,7 @@ async function copyEmail(): Promise<void> {
 
           <label style="margin-top: 10px;">Dank zin</label>
           <textarea v-model="request.ending.thanksLine"></textarea>
-          
+
         </div>
       </div>
 
