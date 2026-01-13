@@ -95,10 +95,9 @@ lines.push("");
     const html: string[] = [];
 
     html.push(`<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #111;">`);
+html.push(`<p style="margin: 0 0 12px 0;">${this.htmlEncode(this.buildGreeting(r))}</p>`);
+html.push(`<p style="margin: 0 0 16px 0;">${this.htmlEncode(r.intro.requestLine.trim())}</p>`);
 
-  html.push(`<p>${this.htmlEncode(this.buildGreeting(r))}</p>`);
-
-html.push(`<p>${this.htmlEncode(r.intro.requestLine.trim())}</p>`);
 
 
     html.push(this.sectionTitle("Datum installatie", color));

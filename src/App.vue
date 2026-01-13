@@ -8,7 +8,7 @@ import { ClipboardService } from "./app/services/clipboardService";
 import { TableImportService } from "./app/services/tableImportService";
 
 const tableImport = new TableImportService();
-
+const request = reactive(createDefaultRequest());
 function onVehiclePaste(e: ClipboardEvent): void {
   e.preventDefault();
 
@@ -19,6 +19,11 @@ function onVehiclePaste(e: ClipboardEvent): void {
   request.vehicleTable.source = html.trim().length > 0 ? "html" : "text";
   request.vehicleTable.html = parsed.html;
   request.vehicleTable.plain = parsed.plain;
+
+  const target = e.target as HTMLElement | null;
+  if (target) {
+    target.innerHTML = "";
+  }
 }
 
 async function onVehicleFileSelected(e: Event): Promise<void> {
@@ -60,7 +65,7 @@ function clearVehicleTable(): void {
 }
 
 
-const request = reactive(createDefaultRequest());
+
 
 const renderer = new TemplateRenderer();
 const clipboard = new ClipboardService();
@@ -102,18 +107,18 @@ async function copyEmail(): Promise<void> {
 
     <div class="grid">
       <div class="card">
-   <div class="section">
-  <div class="section-title">Intro</div>
+        <div class="section">
+          <div class="section-title">Intro</div>
 
-  <label>Aanspreking</label>
-  <div class="salutation-row">
-    <input class="salutation-prefix" v-model="request.intro.salutationPrefix" />
-    <input v-model="request.intro.salutationName" placeholder="Naam" />
-  </div>
+          <label>Aanspreking</label>
+          <div class="salutation-row">
+            <input class="salutation-prefix" v-model="request.intro.salutationPrefix" />
+            <input v-model="request.intro.salutationName" placeholder="Naam" />
+          </div>
 
-  <label style="margin-top: 10px;">Intro zin</label>
-  <textarea v-model="request.intro.requestLine"></textarea>
-</div>
+          <label style="margin-top: 10px;">Intro zin</label>
+          <textarea v-model="request.intro.requestLine"></textarea>
+        </div>
 
 
         <div class="section">
@@ -133,66 +138,58 @@ async function copyEmail(): Promise<void> {
           </div>
         </div>
 
-      <div class="section">
-  <div class="section-title">Installatiegegevens</div>
-  <label>Details</label>
-  <textarea v-model="request.installation.detailsText" placeholder="Bijvoorbeeld: 8 x FMC234 + extra info"></textarea>
-</div>
+        <div class="section">
+          <div class="section-title">Installatiegegevens</div>
+          <label>Details</label>
+          <textarea v-model="request.installation.detailsText"
+            placeholder="Bijvoorbeeld: 8 x FMC234 + extra info"></textarea>
+        </div>
 
         <div class="section">
-  <div class="section-title">Voertuiggegevens</div>
+          <div class="section-title">Voertuiggegevens</div>
 
-  <div class="dropzone" @drop="onVehicleDrop" @dragover="onVehicleDragOver">
-    <div class="dropzone-title">Tabel plakken of CSV droppen</div>
-    <div class="dropzone-sub">Plak hier (Ctrl+V) vanuit Excel of Outlook, of sleep een .csv bestand</div>
+          <div class="dropzone" @drop="onVehicleDrop" @dragover="onVehicleDragOver">
+            <div class="dropzone-title">Tabel plakken of CSV droppen</div>
+            <div class="dropzone-sub">Plak hier (Ctrl+V) vanuit Excel of Outlook, of sleep een .csv bestand</div>
 
-    <div
-      class="paste-area"
-      contenteditable="true"
-      @paste="onVehiclePaste"
-    ></div>
+            <div class="paste-area" contenteditable="true" @paste="onVehiclePaste"></div>
 
-    <div class="actions">
-      <input class="file-input" type="file" accept=".csv,text/csv" @change="onVehicleFileSelected" />
-      <button type="button" @click="clearVehicleTable">Tabel wissen</button>
-    </div>
-  </div>
+            <div class="actions">
+              <input class="file-input" type="file" accept=".csv,text/csv" @change="onVehicleFileSelected" />
+              <button type="button" @click="clearVehicleTable">Tabel wissen</button>
+            </div>
+          </div>
 
-  <label style="margin-top: 10px;">Opmerking voertuigen</label>
-  <textarea v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
+          <label style="margin-top: 10px;">Opmerking voertuigen</label>
+          <textarea v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
 
-  <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px;">
-    <div class="hint">Geen tabel ingeplakt. Je kan nog altijd losse voertuiglijnen gebruiken.</div>
+          <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px;">
+            <div class="hint">Geen tabel ingeplakt. Je kan nog altijd losse voertuiglijnen gebruiken.</div>
 
-    <div
-      v-for="(v, index) in request.vehicles"
-      :key="index"
-      class="vehicle-row"
-      style="margin-bottom: 10px;"
-    >
-      <input v-model="v.brand" placeholder="Merk" />
-      <input v-model="v.model" placeholder="Model" />
-      <input type="number" min="1" v-model.number="v.quantity" />
-      <select v-model="v.powertrain">
-        <option :value="PowertrainType.Unknown">Onbekend</option>
-        <option :value="PowertrainType.Electric">Elektrisch</option>
-        <option :value="PowertrainType.Diesel">Diesel</option>
-        <option :value="PowertrainType.Petrol">Benzine</option>
-        <option :value="PowertrainType.Hybrid">Hybride</option>
-      </select>
-      <input v-model="v.licensePlate" placeholder="Kenteken" />
-      <button type="button" @click="removeVehicle(index)">X</button>
-    </div>
+            <div v-for="(v, index) in request.vehicles" :key="index" class="vehicle-row" style="margin-bottom: 10px;">
+              <input v-model="v.brand" placeholder="Merk" />
+              <input v-model="v.model" placeholder="Model" />
+              <input type="number" min="1" v-model.number="v.quantity" />
+              <select v-model="v.powertrain">
+                <option :value="PowertrainType.Unknown">Onbekend</option>
+                <option :value="PowertrainType.Electric">Elektrisch</option>
+                <option :value="PowertrainType.Diesel">Diesel</option>
+                <option :value="PowertrainType.Petrol">Benzine</option>
+                <option :value="PowertrainType.Hybrid">Hybride</option>
+              </select>
+              <input v-model="v.licensePlate" placeholder="Kenteken" />
+              <button type="button" @click="removeVehicle(index)">X</button>
+            </div>
 
-    <div class="actions">
-      <button type="button" @click="addVehicle">Voeg voertuig toe</button>
-    </div>
-  </div>
+            <div class="actions">
+              <button type="button" @click="addVehicle">Voeg voertuig toe</button>
+            </div>
+          </div>
 
-  <div v-else style="margin-top: 10px;">
-    <div class="hint">Tabel is actief en wordt meegenomen in de preview en in de kopie.</div>
-  </div>
-</div>
+          <div v-else style="margin-top: 10px;">
+            <div class="hint">Tabel is actief en wordt meegenomen in de preview en in de kopie.</div>
+          </div>
+        </div>
 
 
         <div class="section">
@@ -226,7 +223,6 @@ async function copyEmail(): Promise<void> {
           <label style="margin-top: 10px;">Opmerking installatieplaats</label>
           <textarea v-model="request.notes.installationPlaceNotes" placeholder="Vrij veld"></textarea>
         </div>
-
         <div class="section">
           <div class="section-title">Contactpersoon</div>
 
@@ -240,7 +236,13 @@ async function copyEmail(): Promise<void> {
               <input v-model="request.contact.phone" placeholder="+32 470 00 11 23" />
             </div>
           </div>
+
+          <div style="margin-top: 10px;">
+            <label>Email</label>
+            <input v-model="request.contact.email" placeholder="naam@bedrijf.be" />
+          </div>
         </div>
+
 
         <div class="section">
           <div class="section-title">Afsluiting</div>

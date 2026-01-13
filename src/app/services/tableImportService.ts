@@ -209,24 +209,35 @@ private parseCsv(text: string, delimiter: string): string[][] {
 }
 
 
-  private rowsToHtmlTable(rows: string[][]): string {
-    if (rows.length === 0) return "";
+private rowsToHtmlTable(rows: string[][]): string {
+  if (rows.length === 0) return "";
 
-    const tableStyle = "border-collapse:collapse;width:100%;font-family:Verdana,Arial,Helvetica,sans-serif;font-size:12px;";
-    const cellStyle = "border:1px solid #999;padding:4px;vertical-align:top;";
+  const tableStyle = "border-collapse:collapse;width:100%;font-family:Verdana,Arial,Helvetica,sans-serif;font-size:12px;";
+  const cellStyle = "border:1px solid #999;padding:4px;vertical-align:top;";
 
-    let html = `<table style="${tableStyle}">`;
-for (const row of rows) {
-  html += "<tr>";
-  for (const cell of row) {
-    html += `<td style="${cellStyle}">${this.htmlEncode(cell)}</td>`;
+  let html = `<table style="${tableStyle}">`;
+
+  for (const [index, row] of rows.entries()) {
+    html += "<tr>";
+
+    const isHeader = index === 0;
+    if (isHeader) {
+      for (const cell of row) {
+        html += `<th style="border:1px solid #999;padding:4px;vertical-align:top;background:#eeeeee;font-weight:bold;">${this.htmlEncode(cell)}</th>`;
+      }
+    } else {
+      for (const cell of row) {
+        html += `<td style="${cellStyle}">${this.htmlEncode(cell)}</td>`;
+      }
+    }
+
+    html += "</tr>";
   }
-  html += "</tr>";
+
+  html += "</table>";
+  return `<div style="margin-top:6px;">${html}</div>`;
 }
 
-    html += "</table>";
-    return `<div style="margin-top:6px;">${html}</div>`;
-  }
 
   private rowsToPlain(rows: string[][]): string {
     return rows.map(r => r.join(" | ")).join("\n");
