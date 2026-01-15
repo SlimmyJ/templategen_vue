@@ -3,10 +3,13 @@ import { computed, reactive, ref } from "vue";
 import { createDefaultRequest} from "./app/models/installationModels";
 import { TemplateRenderer } from "./app/services/templateRenderer";
 import { ClipboardService } from "./app/services/clipboardService";
+import TopBar from "./app/components/TopBar.vue";
+
 
 
 import { TableImportService } from "./app/services/tableImportService";
 import { watch } from "vue";
+
 import { LocalStateService } from "./app/services/localStateService";
 
 const tableImport = new TableImportService();
@@ -116,6 +119,16 @@ async function copyEmail(): Promise<void> {
 </script>
 
 <template>
+
+  <TopBar
+  brandText="Geofleet V2 Planning"
+  :leftItems="[{ key: 'Installlers', label: 'Installateurs', active: true }]"
+  :rightItems="[
+    { key: '', label: ' ' },
+    { key: '', label: ' ' }
+  ]"
+/>
+
   <div class="container">
     <div class="header">
       <h1 class="title">Installatie template</h1>
