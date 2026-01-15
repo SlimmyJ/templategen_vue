@@ -1,18 +1,8 @@
-export const PowertrainType = {
-  Unknown: "Unknown",
-  Electric: "Electric",
-  Diesel: "Diesel",
-  Petrol: "Petrol",
-  Hybrid: "Hybrid"
-} as const;
-
-export type PowertrainType = typeof PowertrainType[keyof typeof PowertrainType];
 
 export type VehicleLine = {
   brand: string;
   model: string;
   quantity: number;
-  powertrain: PowertrainType;
   licensePlate: string;
 };
 
@@ -103,8 +93,7 @@ installation: {
       {
         brand: "",
         model: "",
-        quantity: 1,
-        powertrain: PowertrainType.Unknown,
+        quantity: 1,    
         licensePlate: ""
       }
     ],
