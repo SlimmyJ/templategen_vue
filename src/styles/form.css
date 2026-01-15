@@ -70,10 +70,22 @@ button.primary:hover {
 
 .vehicle-row {
   display: grid;
-  grid-template-columns: 1.2fr 1.2fr 0.6fr 0.9fr 1fr;
+  grid-template-columns: 1.2fr 1.2fr 0.6fr 1fr 34px;
   gap: 10px;
+  align-items: center;
 }
 
+.vehicle-row button {
+  background: #f0f0f0;
+}
+
+.vehicle-row button {
+  width: 34px;
+  height: 28px;
+  padding: 0;
+  line-height: 28px;
+  text-align: center;
+}
 .section {
   border-top: 1px solid #d7d7d7;
   padding-top: 10px;
@@ -109,10 +121,10 @@ button.primary:hover {
   margin-top: 4px;
 }
 
-/* Small delete button in vehicle rows */
-.vehicle-row button {
-  width: 34px;
-  padding: 0;
+.vehicle-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 0.6fr 1fr;
+  gap: 10px;
 }
 
 .salutation-row {
@@ -125,6 +137,15 @@ button.primary:hover {
   background: #efefef;
   color: #666666;
 }
+
+.spacer {
+  flex: 1;
+}
+
+.btn-reset {
+  padding: 6px 10px;
+}
+
 
 
 .dropzone {

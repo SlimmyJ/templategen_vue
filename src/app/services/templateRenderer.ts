@@ -1,4 +1,4 @@
-import { PowertrainType, type InstallationRequest, type VehicleLine } from "../models/installationModels";
+import {  type InstallationRequest, type VehicleLine } from "../models/installationModels";
 
 export type TemplateResult = {
   subject: string;
@@ -18,10 +18,11 @@ export class TemplateRenderer implements ITemplateRenderer {
     return { subject, htmlBody, plainBody };
   }
 
+  // Onderwerp
   private buildSubject(r: InstallationRequest): string {
     const details = r.installation.detailsText.trim();
     const city = r.location.postalCity.trim();
-  
+
 
     const left = details.length > 0 ? details : "Installatie";
     const right = city.length > 0 ? city : "";
@@ -29,6 +30,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     const subject = `Installatie inplannen - ${left}  ${right.length > 0 ? " - " + right : ""}`;
     return subject.trim();
   }
+
 
   private buildPlain(r: InstallationRequest): string {
     const lines: string[] = [];
@@ -98,23 +100,28 @@ export class TemplateRenderer implements ITemplateRenderer {
     const html: string[] = [];
 
     html.push(`<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #111;">`);
+    //Aanspreking
     html.push(`<p style="margin: 0 0 12px 0;">${this.htmlEncode(this.buildGreeting(r))}</p>`);
-    html.push(`<br>`); 
+    html.push(`<br>`);
+    //Gelieve de onderstaande klant te contacteren 
     html.push(`<p style="margin: 0 0 16px 0;">${this.htmlEncode(r.intro.requestLine.trim())}</p>`);
 
 
 
+    //Section Datum Installatie
     html.push(this.sectionTitle("Datum installatie", color));
     html.push(`<ul style="margin-top: 6px;">`);
     html.push(`<li><strong>Datum:</strong> ${this.htmlEncode(this.formatDate(r))}</li>`);
     html.push(`<li><strong>Tijd:</strong> ${this.htmlEncode(this.formatTime(r))}</li>`);
     html.push(`</ul>`);
 
+    //Section Installatiegegevens
     html.push(this.sectionTitle("Installatiegegevens", color));
     if (r.installation.detailsText.trim().length > 0) {
       html.push(`<div style="margin-top: 6px;">${this.htmlEncode(r.installation.detailsText.trim())}</div>`);
     }
 
+    //Section Voertuiggegevens
     html.push(this.sectionTitle("Voertuiggegevens", color));
 
     if (r.vehicleTable.html.trim().length > 0) {
@@ -131,7 +138,7 @@ export class TemplateRenderer implements ITemplateRenderer {
       html.push(`<div style="margin-top: 6px;"><strong>Opmerking:</strong> ${this.htmlEncode(r.notes.vehicleNotes.trim())}</div>`);
     }
 
-
+    //Section Installatieplaats
     const placeTitle = r.notes.installationPlaceLine.trim().length > 0 ? r.notes.installationPlaceLine.trim() : "Installatieplaats";
     html.push(this.sectionTitle(placeTitle, color));
     html.push(`<div style="margin-top: 6px;">`);
@@ -144,10 +151,14 @@ export class TemplateRenderer implements ITemplateRenderer {
       html.push(`<div style="margin-top: 6px;"><strong>Opmerking:</strong> ${this.htmlEncode(r.notes.installationPlaceNotes.trim())}</div>`);
     }
 
+    //Section Contactpersoon
     html.push(this.sectionTitle("Contactpersoon", color));
     html.push(`<div style="margin-top: 6px;">`);
+
+    //Naam
     html.push(`<div><strong>Naam:</strong> ${this.htmlEncode(r.contact.name)}</div>`);
 
+    //Telefoon, GSM, Email
     if (r.contact.tel.trim().length > 0) {
       html.push(`<div><strong>Tel:</strong> ${this.htmlEncode(r.contact.tel.trim())}</div>`);
     }
@@ -156,13 +167,13 @@ export class TemplateRenderer implements ITemplateRenderer {
     }
     if (r.contact.email.trim().length > 0) {
       const email = r.contact.email.trim();
-      html.push(`<div><strong>E:</strong> <a href="mailto:${this.htmlEncode(email)}" style="color:${color}; text-decoration:none;"><strong>${this.htmlEncode(email)}</strong></a></div>`);
+      html.push(`<div><strong>Email:</strong> <a href="mailto:${this.htmlEncode(email)}" style="color:${color}; text-decoration:none;"><strong>${this.htmlEncode(email)}</strong></a></div>`);
     }
-        html.push(`<br>`); 
+    html.push(`<br>`);
     html.push(`</div>`);
 
     html.push(`<p style="margin-top: 12px;"><strong>${this.htmlEncode(r.ending.confirmLine.trim())}</strong></p>`);
-        html.push(`<br>`); 
+    html.push(`<br>`);
     html.push(`<p>${this.htmlEncode(r.ending.thanksLine.trim())}</p>`);
 
     return html.join("").trim();
@@ -185,21 +196,12 @@ export class TemplateRenderer implements ITemplateRenderer {
     return r.planning.plannedTime.trim().length === 0 ? "Te bepalen met klant" : r.planning.plannedTime.trim();
   }
 
-  private formatVehicleLine(v: VehicleLine): string {
-    const qty = v.quantity > 0 ? v.quantity : 1;
-
-    const power =
-      v.powertrain === PowertrainType.Electric ? "elektrisch" :
-        v.powertrain === PowertrainType.Diesel ? "diesel" :
-          v.powertrain === PowertrainType.Petrol ? "benzine" :
-            v.powertrain === PowertrainType.Hybrid ? "hybride" :
-              "onbekend";
-
-    const name = `${v.brand} ${v.model}`.trim().length > 0 ? `${v.brand} ${v.model}`.trim() : "Voertuig";
-    const plate = v.licensePlate.trim().length > 0 ? ` - ${v.licensePlate.trim()}` : "";
-
-    return `${name} (${qty}x, ${power})${plate}`;
-  }
+private formatVehicleLine(v: VehicleLine): string {
+  const qty = v.quantity > 0 ? v.quantity : 1;
+  const name = `${v.brand} ${v.model}`.trim().length > 0 ? `${v.brand} ${v.model}`.trim() : "Voertuig";
+  const plate = v.licensePlate.trim().length > 0 ? ` - ${v.licensePlate.trim()}` : "";
+  return `${name} (${qty}x)${plate}`;
+}
 
   private sectionTitle(title: string, color: string): string {
     return `

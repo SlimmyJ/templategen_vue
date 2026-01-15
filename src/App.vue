@@ -1,14 +1,34 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
-import { createDefaultRequest, PowertrainType } from "./app/models/installationModels";
+import { createDefaultRequest} from "./app/models/installationModels";
 import { TemplateRenderer } from "./app/services/templateRenderer";
 import { ClipboardService } from "./app/services/clipboardService";
 
 
 import { TableImportService } from "./app/services/tableImportService";
+import { watch } from "vue";
+import { LocalStateService } from "./app/services/localStateService";
 
 const tableImport = new TableImportService();
-const request = reactive(createDefaultRequest());
+const stateStore = new LocalStateService();
+const loaded = stateStore.load();
+
+const request = reactive(loaded ?? createDefaultRequest());
+
+// State save
+watch(
+  () => request,
+  () => {
+    stateStore.save(request);
+  },
+  { deep: true }
+);
+
+function resetForm(): void {
+  stateStore.clear();
+  Object.assign(request, createDefaultRequest());
+}
+
 function onVehiclePaste(e: ClipboardEvent): void {
   e.preventDefault();
 
@@ -64,9 +84,6 @@ function clearVehicleTable(): void {
   request.vehicleTable.plain = "";
 }
 
-
-
-
 const renderer = new TemplateRenderer();
 const clipboard = new ClipboardService();
 
@@ -78,7 +95,6 @@ function addVehicle(): void {
     brand: "",
     model: "",
     quantity: 1,
-    powertrain: PowertrainType.Unknown,
     licensePlate: ""
   });
 }
@@ -169,14 +185,7 @@ async function copyEmail(): Promise<void> {
             <div v-for="(v, index) in request.vehicles" :key="index" class="vehicle-row" style="margin-bottom: 10px;">
               <input v-model="v.brand" placeholder="Merk" />
               <input v-model="v.model" placeholder="Model" />
-              <input type="number" min="1" v-model.number="v.quantity" />
-              <select v-model="v.powertrain">
-                <option :value="PowertrainType.Unknown">Onbekend</option>
-                <option :value="PowertrainType.Electric">Elektrisch</option>
-                <option :value="PowertrainType.Diesel">Diesel</option>
-                <option :value="PowertrainType.Petrol">Benzine</option>
-                <option :value="PowertrainType.Hybrid">Hybride</option>
-              </select>
+              <input type="number" min="1" v-model.number="v.quantity" />             
               <input v-model="v.licensePlate" placeholder="Kenteken" />
               <button type="button" @click="removeVehicle(index)">X</button>
             </div>
@@ -269,10 +278,13 @@ async function copyEmail(): Promise<void> {
           <label>Onderwerp</label>
           <input :value="rendered.subject" readonly />
         </div>
+      
 
-        <div class="actions">
-          <button class="primary" type="button" @click="copyEmail">Copy email (HTML)</button>
-        </div>
+  <div class="actions">
+  <button class="primary" type="button" @click="copyEmail">Copy email (HTML)</button>
+  <div class="spacer"></div>
+  <button type="button" class="btn-reset" @click="resetForm">Reset</button>
+</div>
 
         <div class="small">{{ status }}</div>
       </div>
