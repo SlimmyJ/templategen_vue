@@ -33,35 +33,35 @@ installerStore.ensureSeed([
     email: "ronny@ronny.be",
     gsm: "0476 45 75 75",
   },
-    {
+  {
     id: "2",
     companyName: "VDB Install",
     contactPerson: "Anja Goossens",
     email: "",
     gsm: "",
   },
-      {
+  {
     id: "3",
     companyName: "Desjokken BV",
     contactPerson: "Joris Van Gijseghem",
     email: "desjokken@gmail.com",
     gsm: "+32 473 37 52 95",
   },
-      {
+  {
     id: "4",
     companyName: "AudioJetcar",
     contactPerson: "Frederic Battheu",
     email: "",
     gsm: "",
   },
-        {
+  {
     id: "5",
     companyName: "VES",
     contactPerson: "Thomas Solomé",
     email: "",
     gsm: "",
   },
-          {
+  {
     id: "6",
     companyName: "Bruthi",
     contactPerson: "Dirk Bruyninx",
@@ -69,49 +69,49 @@ installerStore.ensureSeed([
     gsm: "",
   },
   {
-      id: "7",
+    id: "7",
     companyName: "BR2",
     contactPerson: "Laurent Brasseur",
     email: "",
     gsm: "",
   },
-    {
-      id: "8",
+  {
+    id: "8",
     companyName: "Car&Co",
     contactPerson: "Maarten Houben",
     email: "",
     gsm: "",
   },
-      {
-      id: "9",
+  {
+    id: "9",
     companyName: "CJ Tracking",
     contactPerson: "Cindy Laussaunière",
     email: "",
     gsm: "",
   },
-        {
-      id: "10",
+  {
+    id: "10",
     companyName: "Tracing.LU",
     contactPerson: "Alexandre Maniora",
     email: "",
     gsm: "",
   },
-          {
-      id: "11",
+  {
+    id: "11",
     companyName: "Rietveld",
     contactPerson: "Ruud Stigter",
     email: "",
     gsm: "",
   },
-            {
-      id: "12",
+  {
+    id: "12",
     companyName: "Javaco",
     contactPerson: "Niko Gijs",
     email: "",
     gsm: "",
   },
 
-  
+
 ]);
 
 reloadInstallers();
@@ -237,32 +237,32 @@ watch(
     request.intro.salutationPrefix = fr ? "Bonjour" : "Beste";
 
     if (request.intro.requestLine.trim() === "" ||
-        request.intro.requestLine.trim() === "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen." ||
-        request.intro.requestLine.trim() === "Veuillez contacter le client ci-dessous et planifier la mission suivante.") {
+      request.intro.requestLine.trim() === "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen." ||
+      request.intro.requestLine.trim() === "Veuillez contacter le client ci-dessous et planifier la mission suivante.") {
       request.intro.requestLine = fr
         ? "Veuillez contacter le client ci-dessous et planifier la mission suivante."
         : "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen.";
     }
 
     if (request.ending.confirmLine.trim() === "" ||
-        request.ending.confirmLine.includes("Gelieve de datum") ||
-        request.ending.confirmLine.includes("Veuillez confirmer")) {
+      request.ending.confirmLine.includes("Gelieve de datum") ||
+      request.ending.confirmLine.includes("Veuillez confirmer")) {
       request.ending.confirmLine = fr
         ? "Veuillez confirmer la date du rendez-vous à la planning et au client."
         : "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.";
     }
 
     if (request.ending.thanksLine.trim() === "" ||
-        request.ending.thanksLine.includes("Alvast bedankt") ||
-        request.ending.thanksLine.includes("Merci d'avance")) {
+      request.ending.thanksLine.includes("Alvast bedankt") ||
+      request.ending.thanksLine.includes("Merci d'avance")) {
       request.ending.thanksLine = fr
         ? "Merci d'avance pour le bon traitement de cette demande."
         : "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht.";
     }
 
     if (request.notes.installationPlaceLine.trim() === "" ||
-        request.notes.installationPlaceLine.includes("te verifi") ||
-        request.notes.installationPlaceLine.includes("à vérifier")) {
+      request.notes.installationPlaceLine.includes("te verifi") ||
+      request.notes.installationPlaceLine.includes("à vérifier")) {
       request.notes.installationPlaceLine = fr
         ? "Lieu d'installation : à vérifier avec le client"
         : "Installatieplaats: te verifiëren met klant";
@@ -465,16 +465,16 @@ function pickNewInstaller(): void {
     <div class="grid">
       <div class="card">
         <div class="section">
-  <div class="section-title">Taal</div>
+          <div class="section-title">Taal</div>
 
-  <label>Kies taal</label>
-  <select v-model="request.language">
-    <option value="nl">Nederlands</option>
-    <option value="fr">Français</option>
-  </select>
+          <label>Kies taal</label>
+          <select v-model="request.language">
+            <option value="nl">Nederlands</option>
+            <option value="fr">Français</option>
+          </select>
 
-  <div class="hint">Deze taal bepaalt de vaste teksten en titels in beide mails.</div>
-</div>
+          <div class="hint">Deze taal bepaalt de vaste teksten en titels in beide mails.</div>
+        </div>
 
         <div class="section">
           <div class="section-title">Intro</div>
@@ -616,88 +616,79 @@ function pickNewInstaller(): void {
             </div>
           </div>
         </div>
-<div class="section">
-  <div class="section-title">Installateur</div>
+        <div class="section">
+          <div class="section-title">Installateur</div>
 
-  <div class="installer-picker">
-    <label>Kies installateur</label>
+          <div class="installer-picker">
+            <label>Kies installateur</label>
 
-    <div class="picker-row">
-      <input
-        v-model="installerSearch"
-        placeholder="Zoek installateur..."
-        @focus="installerOpen = true"
-        @input="installerOpen = true; onInstallerPick()"
-      />
-      <button type="button" class="picker-btn" @click="installerOpen = !installerOpen">
-        ▼
-      </button>
-    </div>
+            <div class="picker-row">
+              <input v-model="installerSearch" placeholder="Zoek installateur..." @focus="installerOpen = true"
+                @input="installerOpen = true; onInstallerPick()" />
+              <button type="button" class="picker-btn" @click="installerOpen = !installerOpen">
+                ▼
+              </button>
+            </div>
 
-    <div v-if="installerOpen" class="picker-menu">
-      <button type="button" class="picker-item picker-new" @click="pickNewInstaller()">
-        Nieuwe installateur
-      </button>
+            <div v-if="installerOpen" class="picker-menu">
+              <button type="button" class="picker-item picker-new" @click="pickNewInstaller()">
+                Nieuwe installateur
+              </button>
 
-      <button
-        v-for="ins in installers"
-        :key="ins.id"
-        type="button"
-        class="picker-item"
-        @click="pickExistingInstaller(ins.id)"
-      >
-        {{ ins.companyName }}
-      </button>
-    </div>
-  </div>
+              <button v-for="ins in installers" :key="ins.id" type="button" class="picker-item"
+                @click="pickExistingInstaller(ins.id)">
+                {{ ins.companyName }}
+              </button>
+            </div>
+          </div>
 
-  <!-- NEW installer -->
-  <div v-if="request.installerSelection.mode === 'new'" style="margin-top: 10px;">
-    <label>Bedrijfsnaam</label>
-    <input v-model="request.installerSelection.newInstaller.companyName" />
+          <!-- NEW installer -->
+          <div v-if="request.installerSelection.mode === 'new'" style="margin-top: 10px;">
+            <label>Bedrijfsnaam</label>
+            <input v-model="request.installerSelection.newInstaller.companyName" />
 
-    <label style="margin-top: 10px;">Contactpersoon</label>
-    <input v-model="request.installerSelection.newInstaller.contactPerson" />
+            <label style="margin-top: 10px;">Contactpersoon</label>
+            <input v-model="request.installerSelection.newInstaller.contactPerson" />
 
-    <label style="margin-top: 10px;">Email</label>
-    <input v-model="request.installerSelection.newInstaller.email" />
+            <label style="margin-top: 10px;">Email</label>
+            <input v-model="request.installerSelection.newInstaller.email" />
 
-    <label style="margin-top: 10px;">GSM</label>
-    <input v-model="request.installerSelection.newInstaller.gsm" />
+            <label style="margin-top: 10px;">GSM</label>
+            <input v-model="request.installerSelection.newInstaller.gsm" />
 
-    <div class="actions">
-      <button type="button" @click="saveNewInstaller">Opslaan in lijst</button>
-    </div>
-  </div>
+            <div class="actions">
+              <button type="button" @click="saveNewInstaller">Opslaan in lijst</button>
+            </div>
+          </div>
 
-  <!-- EXISTING installer -->
-  <div v-else style="margin-top: 10px;">
-    <div v-if="selectedInstaller">
-      <label>Bedrijfsnaam</label>
-      <input v-model="installerEdit.companyName" />
+          <!-- EXISTING installer -->
+          <div v-else style="margin-top: 10px;">
+            <div v-if="selectedInstaller">
+              <label>Bedrijfsnaam</label>
+              <input v-model="installerEdit.companyName" />
 
-      <label style="margin-top: 10px;">Contactpersoon</label>
-      <input v-model="installerEdit.contactPerson" />
+              <label style="margin-top: 10px;">Contactpersoon</label>
+              <input v-model="installerEdit.contactPerson" />
 
-      <label style="margin-top: 10px;">Email</label>
-      <input v-model="installerEdit.email" />
+              <label style="margin-top: 10px;">Email</label>
+              <input v-model="installerEdit.email" />
 
-      <label style="margin-top: 10px;">GSM</label>
-      <input v-model="installerEdit.gsm" />
+              <label style="margin-top: 10px;">GSM</label>
+              <input v-model="installerEdit.gsm" />
 
-      <div class="actions">
-        <button type="button" @click="saveSelectedInstallerEdits">Wijzigingen opslaan</button>
-        <button type="button" class="danger" @click="deleteSelectedInstaller">
-          Verwijder installateur
-        </button>
-      </div>
-    </div>
+              <div class="actions">
+                <button type="button" @click="saveSelectedInstallerEdits">Wijzigingen opslaan</button>
+                <button type="button" class="danger" @click="deleteSelectedInstaller">
+                  Verwijder installateur
+                </button>
+              </div>
+            </div>
 
-    <div v-else class="hint">
-      Geen installateur geselecteerd.
-    </div>
-  </div>
-</div>
+            <div v-else class="hint">
+              Geen installateur geselecteerd.
+            </div>
+          </div>
+        </div>
 
 
         <div class="section">
