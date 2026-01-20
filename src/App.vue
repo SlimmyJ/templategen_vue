@@ -466,7 +466,6 @@ async function copyCustomer(): Promise<void> {
           <label style="margin-top: 10px">Intro</label>
           <textarea class="textarea-compact muted-editable" v-model="request.intro.requestLine"></textarea>
         </div>
-
         <div class="section">
           <div class="section-title">Datum installatie</div>
 
@@ -486,14 +485,12 @@ async function copyCustomer(): Promise<void> {
           <textarea class="textarea-compact" v-model="request.notes.planningNotes" placeholder="Vrij veld"></textarea>
 
         </div>
-
         <div class="section">
           <div class="section-title">Installatiegegevens</div>
           <label>Details</label>
           <textarea v-model="request.installation.detailsText"
             placeholder="Bijvoorbeeld: 8 x FMC234 + extra info"></textarea>
         </div>
-
         <div class="section">
           <div class="section-title">Voertuiggegevens</div>
 
@@ -548,7 +545,6 @@ async function copyCustomer(): Promise<void> {
            <label style="margin-top: 10px">Opmerking voertuigen</label>
             <textarea class="textarea-compact" v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
         </div>
-
         <div class="section">
           <div class="section-title">Installatieplaats</div>
 
@@ -675,8 +671,6 @@ async function copyCustomer(): Promise<void> {
             </div>
           </div>
         </div>
-
-
         <div class="section">
           <div class="section-title">Afsluiting</div>
 
