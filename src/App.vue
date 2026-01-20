@@ -151,6 +151,51 @@ function saveNewInstaller(): void {
 }
 
 watch(
+  () => request.language,
+  (lang) => {
+    const fr = lang === "fr";
+
+    request.intro.salutationPrefix = fr ? "Bonjour" : "Beste";
+
+    if (request.intro.requestLine.trim() === "" ||
+        request.intro.requestLine.trim() === "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen." ||
+        request.intro.requestLine.trim() === "Veuillez contacter le client ci-dessous et planifier la mission suivante.") {
+      request.intro.requestLine = fr
+        ? "Veuillez contacter le client ci-dessous et planifier la mission suivante."
+        : "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen.";
+    }
+
+    if (request.ending.confirmLine.trim() === "" ||
+        request.ending.confirmLine.includes("Gelieve de datum") ||
+        request.ending.confirmLine.includes("Veuillez confirmer")) {
+      request.ending.confirmLine = fr
+        ? "Veuillez confirmer la date du rendez-vous à la planning et au client."
+        : "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.";
+    }
+
+    if (request.ending.thanksLine.trim() === "" ||
+        request.ending.thanksLine.includes("Alvast bedankt") ||
+        request.ending.thanksLine.includes("Merci d'avance")) {
+      request.ending.thanksLine = fr
+        ? "Merci d'avance pour le bon traitement de cette demande."
+        : "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht.";
+    }
+
+    if (request.notes.installationPlaceLine.trim() === "" ||
+        request.notes.installationPlaceLine.includes("te verifi") ||
+        request.notes.installationPlaceLine.includes("à vérifier")) {
+      request.notes.installationPlaceLine = fr
+        ? "Lieu d'installation : à vérifier avec le client"
+        : "Installatieplaats: te verifiëren met klant";
+    }
+
+    request.customerEmail.intro.salutationPrefix = fr ? "Bonjour" : "Beste";
+  },
+  { immediate: true }
+);
+
+
+watch(
   () => selectedInstaller.value,
   (sel) => {
     if (!sel) {
@@ -304,6 +349,26 @@ async function copyCustomer(): Promise<void> {
     status.value = `Kon niet kopieren: ${message}`;
   }
 }
+
+const installerOpen = ref<boolean>(false);
+
+function pickExistingInstaller(id: string): void {
+  const ins = installers.value.find(x => x.id === id);
+  if (!ins) return;
+
+  request.installerSelection.mode = "existing";
+  request.installerSelection.selectedId = ins.id;
+  installerSearch.value = ins.companyName;
+  installerOpen.value = false;
+}
+
+function pickNewInstaller(): void {
+  request.installerSelection.mode = "new";
+  request.installerSelection.selectedId = "";
+  installerOpen.value = false;
+}
+
+
 </script>
 
 <template>
@@ -320,6 +385,18 @@ async function copyCustomer(): Promise<void> {
 
     <div class="grid">
       <div class="card">
+        <div class="section">
+  <div class="section-title">Taal</div>
+
+  <label>Kies taal</label>
+  <select v-model="request.language">
+    <option value="nl">Nederlands</option>
+    <option value="fr">Français</option>
+  </select>
+
+  <div class="hint">Deze taal bepaalt de vaste teksten en titels in beide mails.</div>
+</div>
+
         <div class="section">
           <div class="section-title">Intro</div>
 
@@ -460,68 +537,89 @@ async function copyCustomer(): Promise<void> {
             </div>
           </div>
         </div>
-        <div class="section">
-          <div class="section-title">Installateur</div>
+<div class="section">
+  <div class="section-title">Installateur</div>
 
-          <label>Kies installateur</label>
-          <input list="installerList" v-model="installerSearch" placeholder="Zoek installateur..."
-            @change="onInstallerPick()" />
-          <datalist id="installerList">
-            <option value="Nieuwe installateur"></option>
-            <option v-for="ins in installers" :key="ins.id" :value="ins.companyName"></option>
-          </datalist>
+  <div class="installer-picker">
+    <label>Kies installateur</label>
 
-          <div v-if="request.installerSelection.mode === 'new'" style="margin-top: 10px">
-            <label>Bedrijfsnaam</label>
-            <input v-model="request.installerSelection.newInstaller.companyName" />
+    <div class="picker-row">
+      <input
+        v-model="installerSearch"
+        placeholder="Zoek installateur..."
+        @focus="installerOpen = true"
+        @input="installerOpen = true; onInstallerPick()"
+      />
+      <button type="button" class="picker-btn" @click="installerOpen = !installerOpen">
+        ▼
+      </button>
+    </div>
 
-            <label style="margin-top: 10px">Contactpersoon</label>
-            <input v-model="request.installerSelection.newInstaller.contactPerson" />
+    <div v-if="installerOpen" class="picker-menu">
+      <button type="button" class="picker-item picker-new" @click="pickNewInstaller()">
+        Nieuwe installateur
+      </button>
 
-            <label style="margin-top: 10px">Email</label>
-            <input v-model="request.installerSelection.newInstaller.email" />
+      <button
+        v-for="ins in installers"
+        :key="ins.id"
+        type="button"
+        class="picker-item"
+        @click="pickExistingInstaller(ins.id)"
+      >
+        {{ ins.companyName }}
+      </button>
+    </div>
+  </div>
 
-            <label style="margin-top: 10px">GSM</label>
-            <input v-model="request.installerSelection.newInstaller.gsm" />
+  <!-- NEW installer -->
+  <div v-if="request.installerSelection.mode === 'new'" style="margin-top: 10px;">
+    <label>Bedrijfsnaam</label>
+    <input v-model="request.installerSelection.newInstaller.companyName" />
 
-            <div class="actions">
-              <button type="button" @click="saveNewInstaller">
-                Opslaan in lijst
-              </button>
+    <label style="margin-top: 10px;">Contactpersoon</label>
+    <input v-model="request.installerSelection.newInstaller.contactPerson" />
 
+    <label style="margin-top: 10px;">Email</label>
+    <input v-model="request.installerSelection.newInstaller.email" />
 
+    <label style="margin-top: 10px;">GSM</label>
+    <input v-model="request.installerSelection.newInstaller.gsm" />
 
-            </div>
-          </div>
+    <div class="actions">
+      <button type="button" @click="saveNewInstaller">Opslaan in lijst</button>
+    </div>
+  </div>
 
-          <div v-else style="margin-top: 10px;">
-            <div v-if="selectedInstaller">
-              <label>Bedrijfsnaam</label>
-              <input v-model="installerEdit.companyName" />
+  <!-- EXISTING installer -->
+  <div v-else style="margin-top: 10px;">
+    <div v-if="selectedInstaller">
+      <label>Bedrijfsnaam</label>
+      <input v-model="installerEdit.companyName" />
 
-              <label style="margin-top: 10px;">Contactpersoon</label>
-              <input v-model="installerEdit.contactPerson" />
+      <label style="margin-top: 10px;">Contactpersoon</label>
+      <input v-model="installerEdit.contactPerson" />
 
-              <label style="margin-top: 10px;">Email</label>
-              <input v-model="installerEdit.email" />
+      <label style="margin-top: 10px;">Email</label>
+      <input v-model="installerEdit.email" />
 
-              <label style="margin-top: 10px;">GSM</label>
-              <input v-model="installerEdit.gsm" />
+      <label style="margin-top: 10px;">GSM</label>
+      <input v-model="installerEdit.gsm" />
 
-              <div class="actions">
-                <button type="button" @click="saveSelectedInstallerEdits">Wijzigingen opslaan</button>
-                <button type="button" class="danger" @click="deleteSelectedInstaller">
-                  Verwijder installateur
-                </button>
-              </div>
-            </div>
+      <div class="actions">
+        <button type="button" @click="saveSelectedInstallerEdits">Wijzigingen opslaan</button>
+        <button type="button" class="danger" @click="deleteSelectedInstaller">
+          Verwijder installateur
+        </button>
+      </div>
+    </div>
 
-            <div v-else class="hint">
-              Geen installateur geselecteerd.
-            </div>
-          </div>
+    <div v-else class="hint">
+      Geen installateur geselecteerd.
+    </div>
+  </div>
+</div>
 
-        </div>
 
         <div class="section">
           <div class="section-title">Afsluiting</div>

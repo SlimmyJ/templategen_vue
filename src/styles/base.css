@@ -40,3 +40,51 @@ button.danger {
 button.danger:hover {
   border-color: rgb(194, 14, 26);
 }
+
+.installer-picker {
+  position: relative;
+}
+
+.picker-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.picker-btn {
+  width: 34px;
+  min-width: 34px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #c9c9c9;
+  background: #f0f0f0;
+  border-radius: 6px;
+}
+
+.picker-menu {
+  margin-top: 6px;
+  border: 1px solid #c9c9c9;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.picker-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  background: #fff;
+  cursor: pointer;
+}
+
+.picker-item:hover {
+  background: #f4f4f4;
+}
+
+.picker-new {
+  font-weight: bold;
+  border-bottom: 1px solid #ececec;
+}

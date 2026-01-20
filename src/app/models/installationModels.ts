@@ -11,6 +11,8 @@ export type VehicleTable = {
   plain: string;
 };
 
+
+
 export type PlanningInfo = {
   plannedDate: string;
   plannedTime: string;
@@ -74,6 +76,8 @@ export type CustomerEmailData = {
 };
 
 export type InstallationRequest = {
+  language: "nl" | "fr";
+
   intro: IntroText;
   planning: PlanningInfo;
   installation: InstallationDetails;
@@ -94,6 +98,7 @@ export type InstallationRequest = {
 
 export function createDefaultRequest(): InstallationRequest {
   return {
+    language: "nl",
     senderName: "Sven Paelman",
     brandPrimaryColorHex: "#C20E1A",
 
