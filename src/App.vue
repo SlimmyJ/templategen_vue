@@ -126,7 +126,6 @@ const activeInstaller = computed(() => {
   return request.installerSelection.newInstaller;
 });
 
-
 const renderedCustomer = computed(() =>
   renderer.renderCustomerEmail(request, activeInstaller.value),
 );
@@ -143,7 +142,6 @@ const installerEdit = reactive({
   email: "",
   gsm: ""
 });
-
 
 function reloadInstallers(): void {
   installers.value = installerStore.getAll().map(x => ({
@@ -197,7 +195,6 @@ function onInstallerPick(): void {
   request.installerSelection.selectedId = "";
   request.installerSelection.newInstaller.companyName = value;
 }
-
 
 function saveNewInstaller(): void {
   const n = request.installerSelection.newInstaller;
@@ -273,7 +270,6 @@ watch(
   { immediate: true }
 );
 
-
 watch(
   () => selectedInstaller.value,
   (sel) => {
@@ -292,6 +288,14 @@ watch(
   { immediate: true }
 );
 
+// State save
+watch(
+  () => request,
+  () => {
+    stateStore.save(request);
+  },
+  { deep: true },
+);
 
 function saveSelectedInstallerEdits(): void {
   const sel = selectedInstaller.value;
@@ -308,15 +312,6 @@ function saveSelectedInstallerEdits(): void {
   reloadInstallers();
   installerSearch.value = installerEdit.companyName.trim();
 }
-
-// State save
-watch(
-  () => request,
-  () => {
-    stateStore.save(request);
-  },
-  { deep: true },
-);
 
 function deleteSelectedInstaller(): void {
   const sel = selectedInstaller.value;
@@ -447,7 +442,6 @@ function pickNewInstaller(): void {
   installerOpen.value = false;
 }
 
-
 </script>
 
 <template>
@@ -484,7 +478,7 @@ function pickNewInstaller(): void {
           </div>
 
           <label style="margin-top: 10px">Intro zin</label>
-          <textarea v-model="request.intro.requestLine"></textarea>
+          <textarea class="textarea-compact muted-editable" v-model="request.intro.requestLine"></textarea>
         </div>
 
         <div class="section">
@@ -517,7 +511,7 @@ function pickNewInstaller(): void {
           <div class="dropzone" @drop="onVehicleDrop" @dragover="onVehicleDragOver">
             <div class="dropzone-title">Tabel plakken of CSV droppen</div>
             <div class="dropzone-sub">
-              Plak hier (Ctrl+V) vanuit Excel of Outlook, of sleep een .csv
+              Plak vanuit Excel of Outlook, of sleep een .csv
               bestand
             </div>
 
@@ -536,8 +530,7 @@ function pickNewInstaller(): void {
 
           <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px">
             <div class="hint">
-              Geen tabel ingeplakt. Je kan nog altijd losse voertuiglijnen
-              gebruiken.
+              Geen tabel ingeplakt.
             </div>
 
             <div v-for="(v, index) in request.vehicles" :key="index" class="vehicle-row" style="margin-bottom: 10px">
@@ -557,7 +550,7 @@ function pickNewInstaller(): void {
 
           <div v-else style="margin-top: 10px">
             <div class="hint">
-              Tabel is actief en wordt meegenomen in de preview en in de kopie.
+              Tabel is actief en wordt meegenomen in de preview en kopie.
             </div>
           </div>
         </div>
@@ -565,12 +558,12 @@ function pickNewInstaller(): void {
         <div class="section">
           <div class="section-title">Installatieplaats</div>
 
-          <label>Titel zin</label>
+          <label>Titel</label>
           <input v-model="request.notes.installationPlaceLine" />
 
           <div class="two" style="margin-top: 10px">
             <div>
-              <label>Locatienaam</label>
+              <label>Locatie</label>
               <input v-model="request.location.name" placeholder="Total Energies Muide" />
             </div>
             <div>
@@ -693,10 +686,10 @@ function pickNewInstaller(): void {
           <div class="section-title">Afsluiting</div>
 
           <label>Bevestiging</label>
-          <textarea v-model="request.ending.confirmLine"></textarea>
+          <textarea class="textarea-compact muted-editable" v-model="request.ending.confirmLine"></textarea>
 
-          <label style="margin-top: 10px">Dank zin</label>
-          <textarea v-model="request.ending.thanksLine"></textarea>
+          <label style="margin-top: 10px">Dankzin</label>
+          <textarea class="textarea-compact muted-editable" v-model="request.ending.thanksLine"></textarea>
         </div>
       </div>
 
@@ -727,9 +720,9 @@ function pickNewInstaller(): void {
 
         <div class="actions">
           <button class="primary" type="button" @click="copyInstaller">
-            Copy installateur (HTML)
+            Copy installateur
           </button>
-          <button type="button" @click="copyCustomer">Copy klant (HTML)</button>
+          <button type="button" @click="copyCustomer">Copy klant</button>
           <div class="spacer"></div>
           <button type="button" class="btn-reset" @click="resetForm">
             Reset

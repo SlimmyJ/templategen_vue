@@ -17,6 +17,8 @@ export class TemplateRenderer implements ITemplateRenderer {
     return { subject, htmlBody };
   }
 
+  
+
   public renderCustomerEmail(request: InstallationRequest, installer: InstallerInfo): TemplateResult {
     const subject = this.buildCustomerSubject(request);
     const htmlBody = this.buildCustomerHtml(request, installer);
@@ -39,6 +41,8 @@ export class TemplateRenderer implements ITemplateRenderer {
     const value = desc.length > 0 ? desc : "installatie";
     return `Planning ${value}`.trim();
   }
+
+  
 
   private t(lang: "nl" | "fr") {
     const fr = lang === "fr";
@@ -225,8 +229,6 @@ export class TemplateRenderer implements ITemplateRenderer {
 
     html.push(`<div>${this.htmlEncode(tr.customerIntroPrefix)} ${who} ${this.htmlEncode(tr.customerWillContact)}</div>`);
 
-
-
     html.push(this.sectionTitle(tr.vehicleDetails, color));
     const vehicleHtml = this.buildVehicleHtml(r);
     html.push(vehicleHtml.length > 0 ? vehicleHtml : `<div>(Geen voertuigen opgegeven)</div>`);
@@ -280,24 +282,41 @@ export class TemplateRenderer implements ITemplateRenderer {
     const tr = this.t(r.language);
     return r.planning.plannedDate.trim().length === 0 ? tr.tbdCustomer : r.planning.plannedDate.trim();
   }
+
   private formatTime(r: InstallationRequest): string {
     const tr = this.t(r.language);
     return r.planning.plannedTime.trim().length === 0 ? tr.tbdCustomer : r.planning.plannedTime.trim();
   }
 
-  private buildVehicleHtml(r: InstallationRequest): string {
-    const tr = this.t(r.language);
+private buildVehicleHtml(r: InstallationRequest): string {
+  const tr = this.t(r.language);
 
-    if (r.vehicleTable.html.trim().length > 0) return r.vehicleTable.html;
-    if (r.vehicles.length === 0) return "";
+  if (r.vehicleTable.html.trim().length > 0) {
+    return this.hidePlateColumnIfEmpty(r.vehicleTable.html, tr.thPlate);
+  }
 
-    const rows: string[][] = [
-      [tr.thBrand, tr.thModel, tr.thQty, tr.thPlate],
-      ...r.vehicles.map(v => [v.brand ?? "", v.model ?? "", String(v.quantity ?? 1), v.licensePlate ?? ""])
+  if (r.vehicles.length === 0) return "";
+
+  const hasAnyPlate = r.vehicles.some(v => (v.licensePlate ?? "").trim().length > 0);
+
+  const header = hasAnyPlate
+    ? [tr.thBrand, tr.thModel, tr.thQty, tr.thPlate]
+    : [tr.thBrand, tr.thModel, tr.thQty];
+
+  const rows = r.vehicles.map(v => {
+    const base = [
+      (v.brand ?? "").trim(),
+      (v.model ?? "").trim(),
+      String(v.quantity ?? 1),
     ];
 
-    return this.rowsToHtmlTable(rows);
-  }
+    if (hasAnyPlate) base.push((v.licensePlate ?? "").trim());
+    return base;
+  });
+
+  return this.rowsToHtmlTable([header, ...rows]);
+}
+
 
   private rowsToHtmlTable(rows: string[][]): string {
     if (rows.length === 0) return "";
@@ -348,4 +367,82 @@ export class TemplateRenderer implements ITemplateRenderer {
       .split(">").join("&gt;")
       .split("\"").join("&quot;");
   }
+
+private hidePlateColumnIfEmpty(htmlTable: string, translatedPlateHeader: string): string {
+  const input = htmlTable.trim();
+  if (input.length === 0) return input;
+
+  if (typeof DOMParser === "undefined") return input;
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(input, "text/html");
+    const table = doc.querySelector("table");
+    if (!table) return input;
+
+    const rows = Array.from(table.querySelectorAll("tr"));
+    if (rows.length === 0) return input;
+
+    const headerRow = rows[0];
+    if (!headerRow) return input;
+
+    const headerCells = Array.from(headerRow.querySelectorAll("th, td"));
+    if (headerCells.length === 0) return input;
+
+    const norm = (s: string) => s.trim().toLowerCase();
+
+    const plateHeaders = new Set<string>([
+      norm(translatedPlateHeader),
+      "kenteken",
+      "nummerplaat",
+      "plaque",
+      "immatriculation",
+      "license plate",
+      "plate",
+    ]);
+
+    const plateIndex = headerCells.findIndex((c) => plateHeaders.has(norm(c.textContent ?? "")));
+    if (plateIndex < 0) return input;
+
+    // Check if any data row has a non-empty value in plate column
+    let anyNonEmpty = false;
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row) continue;
+
+      const cells = Array.from(row.querySelectorAll("th, td"));
+      if (plateIndex >= cells.length) continue;
+
+      const cell = cells[plateIndex];
+      const text = (cell?.textContent ?? "").trim();
+      if (text.length > 0) {
+        anyNonEmpty = true;
+        break;
+      }
+    }
+
+    if (anyNonEmpty) return input;
+
+    // Remove the column from each row
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll("th, td"));
+      if (plateIndex >= cells.length) continue;
+
+      const cell = cells[plateIndex];
+      if (cell) cell.remove();
+    }
+
+    // Keep wrapper div if the table was wrapped
+    const wrapperDiv = table.parentElement && table.parentElement.tagName.toLowerCase() === "div"
+      ? table.parentElement
+      : null;
+
+    return wrapperDiv ? wrapperDiv.outerHTML : table.outerHTML;
+  } catch {
+    return input;
+  }
+}
+
+
 }

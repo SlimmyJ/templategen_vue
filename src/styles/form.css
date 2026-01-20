@@ -138,6 +138,19 @@ button.primary:hover {
   color: #666666;
 }
 
+.muted-editable {
+  background: #f3f3f3;
+  color: #666;
+  border: 1px solid #d7d7d7;
+}
+
+.muted-editable:focus {
+  outline: none;
+  border-color: rgb(194, 14, 26);
+  box-shadow: 0 0 0 3px rgba(194, 14, 26, 0.12);
+}
+
+
 .spacer {
   flex: 1;
 }
@@ -176,4 +189,11 @@ button.primary:hover {
 .file-input {
   font-size: 11px;
 }
+
+textarea.textarea-compact {
+  min-height: 30px;
+  height: 30px;
+  resize: vertical;
+}
+
 
