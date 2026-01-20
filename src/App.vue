@@ -480,9 +480,9 @@ async function copyCustomer(): Promise<void> {
               <label>Tijd</label>
               <input type="time" v-model="request.planning.plannedTime" />
               <div class="hint">Leeg = te bepalen met klant</div>
-            </div>    
+            </div>
           </div>
-            <label style="margin-top: 10px;">Opmerking datum installatie</label>
+          <label style="margin-top: 10px;">Opmerking datum installatie</label>
           <textarea class="textarea-compact" v-model="request.notes.planningNotes" placeholder="Vrij veld"></textarea>
 
         </div>
@@ -527,13 +527,14 @@ async function copyCustomer(): Promise<void> {
               <input v-model="v.model" placeholder="Model" />
               <input type="number" min="1" v-model.number="v.quantity" />
               <input v-model="v.licensePlate" placeholder="Kenteken" />
-              <button type="button" @click="removeVehicle(index)">X</button>
+              <button type="button" class="vehicle-remove" @click="removeVehicle(index)">X</button>
             </div>
 
-            <div class="actions">
-              <button type="button" @click="addVehicle">
+            <div class="vehicle-row vehicle-add-row">
+              <button type="button" class="btn-add-vehicle" @click="addVehicle">
                 Voeg voertuig toe
               </button>
+              <div class="vehicle-add-spacer"></div>
             </div>
           </div>
 
@@ -569,7 +570,8 @@ async function copyCustomer(): Promise<void> {
           </div>
 
           <label style="margin-top: 10px">Opmerking installatieplaats</label>
-          <textarea class="textarea-compact" v-model="request.notes.installationPlaceNotes" placeholder="Vrij veld"></textarea>
+          <textarea class="textarea-compact" v-model="request.notes.installationPlaceNotes"
+            placeholder="Vrij veld"></textarea>
         </div>
         <div class="section">
           <div class="section-title">Contactpersoon</div>
