@@ -514,11 +514,8 @@ async function copyCustomer(): Promise<void> {
             </div>
           </div>
 
-          <label style="margin-top: 10px">Opmerking voertuigen</label>
-          <textarea class="textarea-compact" v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
-
-          <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px">
-            <div class="hint">
+          <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px;">
+            <div class="hint" style="margin-bottom: 10px">
               Geen tabel ingeplakt.
             </div>
 
@@ -536,13 +533,20 @@ async function copyCustomer(): Promise<void> {
               </button>
               <div class="vehicle-add-spacer"></div>
             </div>
+
+           
           </div>
+
+
 
           <div v-else style="margin-top: 10px">
             <div class="hint">
               Tabel is actief en wordt meegenomen in de preview en kopie.
             </div>
           </div>
+
+           <label style="margin-top: 10px">Opmerking voertuigen</label>
+            <textarea class="textarea-compact" v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
         </div>
 
         <div class="section">
