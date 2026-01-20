@@ -17,8 +17,6 @@ export class TemplateRenderer implements ITemplateRenderer {
     return { subject, htmlBody };
   }
 
-
-
   public renderCustomerEmail(request: InstallationRequest, installer: InstallerInfo): TemplateResult {
     const subject = this.buildCustomerSubject(request);
     const htmlBody = this.buildCustomerHtml(request, installer);
@@ -41,8 +39,6 @@ export class TemplateRenderer implements ITemplateRenderer {
     const value = desc.length > 0 ? desc : "installatie";
     return `Planning ${value}`.trim();
   }
-
-
 
   private t(lang: "nl" | "fr") {
     const fr = lang === "fr";
@@ -106,12 +102,13 @@ export class TemplateRenderer implements ITemplateRenderer {
     };
   }
 
-
   private buildInstallerHtml(r: InstallationRequest): string {
     const tr = this.t(r.language);
-
-    const color = r.brandPrimaryColorHex.trim().length > 0 ? r.brandPrimaryColorHex.trim() : "#C20E1A";
     const html: string[] = [];
+    const showPlanningNote = r.notes.planningNotes.trim().length > 0;
+    const placeTitle = r.notes.installationPlaceLine.trim().length > 0 ? r.notes.installationPlaceLine.trim() : tr.installPlace;
+    const color = r.brandPrimaryColorHex.trim().length > 0 ? r.brandPrimaryColorHex.trim() : "#C20E1A";
+    
 
     html.push(`<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #111;">`);
 
@@ -125,16 +122,14 @@ export class TemplateRenderer implements ITemplateRenderer {
     html.push(`<li><strong>${this.htmlEncode(tr.date)}:</strong> ${this.htmlEncode(this.formatDate(r))}</li>`);
     html.push(`<li><strong>${this.htmlEncode(tr.time)}:</strong> ${this.htmlEncode(this.formatTime(r))}</li>`);
     html.push(`</ul>`);
-   const noDate = r.planning.plannedDate.trim().length === 0;
-const noTime = r.planning.plannedTime.trim().length === 0;
-const showPlanningNote = noDate && noTime && r.notes.planningNotes.trim().length > 0;
+   
 
-if (showPlanningNote) {
-  html.push(
-    `<div style="margin-top: 6px;"><strong>${this.htmlEncode(tr.notes)}:</strong> ${this.htmlEncode(r.notes.planningNotes.trim())}</div>`
-  );
-}
-html.push(`<br>`); 
+    if (showPlanningNote) {
+      html.push(
+        `<div style="margin-top: 6px;"><strong>${this.htmlEncode(tr.notes)}:</strong> ${this.htmlEncode(r.notes.planningNotes.trim())}</div>`
+      );
+    }
+    html.push(`<br>`);
 
     html.push(this.sectionTitle(tr.installationDetails, color));
     if (r.installation.detailsText.trim().length > 0) {
@@ -149,7 +144,6 @@ html.push(`<br>`);
     }
     html.push(`<br>`);
 
-    const placeTitle = r.notes.installationPlaceLine.trim().length > 0 ? r.notes.installationPlaceLine.trim() : tr.installPlace;
     html.push(this.sectionTitle(placeTitle, color));
     html.push(`<div style="margin-top: 6px;">`);
     html.push(`<div><strong>${this.htmlEncode(tr.location)}:</strong> ${this.htmlEncode(r.location.name)}</div>`);
@@ -201,7 +195,7 @@ html.push(`<br>`);
     html.push(`<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #111;">`);
 
     html.push(`<div>${this.htmlEncode(greeting)}</div>`);
-    html.push(`<br>`);    
+    html.push(`<br>`);
 
     const person = installerPerson.trim();
     const company = installerCompany.trim();
@@ -232,23 +226,23 @@ html.push(`<br>`);
     html.push(`<div>${this.htmlEncode(tr.customerIntroPrefix)} ${who} ${this.htmlEncode(tr.customerWillContact)}</div>`);
     html.push(`<br>`);
 
-const hasDate = r.planning.plannedDate.trim().length > 0;
-const hasTime = r.planning.plannedTime.trim().length > 0;
+    const hasDate = r.planning.plannedDate.trim().length > 0;
+    const hasTime = r.planning.plannedTime.trim().length > 0;
 
-if (hasDate || hasTime) {
-  html.push(this.sectionTitle(tr.dateInstall, color));
-  html.push(`<ul style="margin-top: 6px;">`);
+    if (hasDate || hasTime) {
+      html.push(this.sectionTitle(tr.dateInstall, color));
+      html.push(`<ul style="margin-top: 6px;">`);
 
-  if (hasDate) {
-    html.push(`<li><strong>${this.htmlEncode(tr.date)}:</strong> ${this.htmlEncode(r.planning.plannedDate.trim())}</li>`);
-  }
-  if (hasTime) {
-    html.push(`<li><strong>${this.htmlEncode(tr.time)}:</strong> ${this.htmlEncode(r.planning.plannedTime.trim())}</li>`);
-  }
+      if (hasDate) {
+        html.push(`<li><strong>${this.htmlEncode(tr.date)}:</strong> ${this.htmlEncode(r.planning.plannedDate.trim())}</li>`);
+      }
+      if (hasTime) {
+        html.push(`<li><strong>${this.htmlEncode(tr.time)}:</strong> ${this.htmlEncode(r.planning.plannedTime.trim())}</li>`);
+      }
 
-  html.push(`</ul>`);
-  html.push(`<br>`);
-}
+      html.push(`</ul>`);
+      html.push(`<br>`);
+    }
 
 
     html.push(this.sectionTitle(tr.vehicleDetails, color));
@@ -424,7 +418,6 @@ if (hasDate || hasTime) {
       const plateIndex = headerCells.findIndex((c) => plateHeaders.has(norm(c.textContent ?? "")));
       if (plateIndex < 0) return input;
 
-      // Check if any data row has a non-empty value in plate column
       let anyNonEmpty = false;
 
       for (let i = 1; i < rows.length; i++) {
@@ -444,7 +437,6 @@ if (hasDate || hasTime) {
 
       if (anyNonEmpty) return input;
 
-      // Remove the column from each row
       for (const row of rows) {
         const cells = Array.from(row.querySelectorAll("th, td"));
         if (plateIndex >= cells.length) continue;
@@ -452,8 +444,6 @@ if (hasDate || hasTime) {
         const cell = cells[plateIndex];
         if (cell) cell.remove();
       }
-
-      // Keep wrapper div if the table was wrapped
       const wrapperDiv = table.parentElement && table.parentElement.tagName.toLowerCase() === "div"
         ? table.parentElement
         : null;
@@ -463,6 +453,5 @@ if (hasDate || hasTime) {
       return input;
     }
   }
-
 
 }

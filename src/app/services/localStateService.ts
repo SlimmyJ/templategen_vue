@@ -34,8 +34,7 @@ export class LocalStateService implements ILocalStateService {
   public clear(): void {
     try {
       localStorage.removeItem(this.key);
-    } catch {
-      // ignore
+    } catch {      
     }
   }
 

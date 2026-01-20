@@ -4,131 +4,106 @@ import { createDefaultRequest } from "./app/models/installationModels";
 import { TemplateRenderer } from "./app/services/templateRenderer";
 import { ClipboardService } from "./app/services/clipboardService";
 import TopBar from "./app/components/TopBar.vue";
-import {
-  InstallerStore,
-  type InstallerRecord,
-} from "./app/services/installerStore";
+import { InstallerStore, type InstallerRecord } from "./app/services/installerStore";
 import { TableImportService } from "./app/services/tableImportService";
 import { LocalStateService } from "./app/services/localStateService";
 
 type PreviewTab = "installer" | "customer";
+type Lang = "nl" | "fr";
+
+type LangDefaults = {
+  introPrefix: string;
+  introLine: string;
+  confirmLine: string;
+  thanksLine: string;
+  placeLine: string;
+  customerPrefix: string;
+};
+
+const defaultsByLang: Record<Lang, LangDefaults> = {
+  nl: {
+    introPrefix: "Beste",
+    introLine: "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen.",
+    confirmLine: "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.",
+    thanksLine: "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht.",
+    placeLine: "Installatieplaats: te verifiëren met klant",
+    customerPrefix: "Beste",
+  },
+  fr: {
+    introPrefix: "Bonjour",
+    introLine: "Veuillez contacter le client ci-dessous et planifier la mission suivante.",
+    confirmLine: "Veuillez confirmer la date du rendez-vous à la planning et au client.",
+    thanksLine: "Merci d'avance pour le bon traitement de cette demande.",
+    placeLine: "Lieu d'installation : à vérifier avec le client",
+    customerPrefix: "Bonjour",
+  },
+};
+
+function setIfUnchanged(
+  current: string,
+  previousAuto: string,
+  nextAuto: string,
+  setter: (v: string) => void
+): void {
+  const c = (current ?? "").trim();
+  const p = (previousAuto ?? "").trim();
+  if (c.length === 0 || c === p) setter(nextAuto);
+}
+
+function slugifyId(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .join("-")
+    .split("&")
+    .join("and");
+}
 
 const tableImport = new TableImportService();
 const stateStore = new LocalStateService();
 const loaded = stateStore.load();
+
 const request = reactive(loaded ?? createDefaultRequest());
-const installerSearch = ref<string>("");
+
 const installerStore = new InstallerStore();
-const installers = ref<InstallerRecord[]>(installerStore.getAll());
+const installers = ref<InstallerRecord[]>([]);
+const installerSearch = ref<string>("");
+const installerOpen = ref<boolean>(false);
+
 const activeTab = ref<PreviewTab>("installer");
+
 const renderer = new TemplateRenderer();
 const clipboard = new ClipboardService();
 const status = ref<string>("");
 
+
 installerStore.ensureSeed([
-  {
-    id: "1",
-    companyName: "Car&Truck Protection",
-    contactPerson: "Dhr. Ronny Michiels",
-    email: "ronny@ronny.be",
-    gsm: "0476 45 75 75",
-  },
-  {
-    id: "2",
-    companyName: "VDB Install",
-    contactPerson: "Anja Goossens",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "3",
-    companyName: "Desjokken BV",
-    contactPerson: "Joris Van Gijseghem",
-    email: "desjokken@gmail.com",
-    gsm: "+32 473 37 52 95",
-  },
-  {
-    id: "4",
-    companyName: "AudioJetcar",
-    contactPerson: "Frederic Battheu",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "5",
-    companyName: "VES",
-    contactPerson: "Thomas Solomé",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "6",
-    companyName: "Bruthi",
-    contactPerson: "Dirk Bruyninx",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "7",
-    companyName: "BR2",
-    contactPerson: "Laurent Brasseur",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "8",
-    companyName: "Car&Co",
-    contactPerson: "Maarten Houben",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "9",
-    companyName: "CJ Tracking",
-    contactPerson: "Cindy Laussaunière",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "10",
-    companyName: "Tracing.LU",
-    contactPerson: "Alexandre Maniora",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "11",
-    companyName: "Rietveld",
-    contactPerson: "Ruud Stigter",
-    email: "",
-    gsm: "",
-  },
-  {
-    id: "12",
-    companyName: "Javaco",
-    contactPerson: "Niko Gijs",
-    email: "",
-    gsm: "",
-  },
-
-
+  { id: "1", companyName: "Car&Truck Protection", contactPerson: "Dhr. Ronny Michiels", email: "ronny@ronny.be", gsm: "0476 45 75 75" },
+  { id: "2", companyName: "VDB Install", contactPerson: "Anja Goossens", email: "", gsm: "" },
+  { id: "3", companyName: "Desjokken BV", contactPerson: "Joris Van Gijseghem", email: "desjokken@gmail.com", gsm: "+32 473 37 52 95" },
+  { id: "4", companyName: "AudioJetcar", contactPerson: "Frederic Battheu", email: "", gsm: "" },
+  { id: "5", companyName: "VES", contactPerson: "Thomas Solomé", email: "", gsm: "" },
+  { id: "6", companyName: "Bruthi", contactPerson: "Dirk Bruyninx", email: "", gsm: "" },
+  { id: "7", companyName: "BR2", contactPerson: "Laurent Brasseur", email: "", gsm: "" },
+  { id: "8", companyName: "Car&Co", contactPerson: "Maarten Houben", email: "", gsm: "" },
+  { id: "9", companyName: "CJ Tracking", contactPerson: "Cindy Laussaunière", email: "", gsm: "" },
+  { id: "10", companyName: "Tracing.LU", contactPerson: "Alexandre Maniora", email: "", gsm: "" },
+  { id: "11", companyName: "Rietveld", contactPerson: "Ruud Stigter", email: "", gsm: "" },
+  { id: "12", companyName: "Javaco", contactPerson: "Niko Gijs", email: "", gsm: "" },
 ]);
 
+function reloadInstallers(): void {
+  installers.value = installerStore.getAll().map((x) => ({
+    id: x.id,
+    companyName: x.companyName ?? "",
+    contactPerson: x.contactPerson ?? "",
+    email: x.email ?? "",
+    gsm: x.gsm ?? "",
+  }));
+}
 reloadInstallers();
-
-const renderedInstaller = computed(() =>
-  renderer.renderInstallerEmail(request),
-);
-
-const activeInstaller = computed(() => {
-  if (request.installerSelection.mode === "new") return request.installerSelection.newInstaller;
-  if (selectedInstaller.value) return installerEdit;
-  return request.installerSelection.newInstaller;
-});
-
-const renderedCustomer = computed(() =>
-  renderer.renderCustomerEmail(request, activeInstaller.value),
-);
 
 const selectedInstaller = computed<InstallerRecord | null>(() => {
   const id = request.installerSelection.selectedId;
@@ -140,132 +115,97 @@ const installerEdit = reactive({
   companyName: "",
   contactPerson: "",
   email: "",
-  gsm: ""
+  gsm: "",
 });
 
-function reloadInstallers(): void {
-  installers.value = installerStore.getAll().map(x => ({
-    id: x.id,
-    companyName: x.companyName ?? "",
-    contactPerson: x.contactPerson ?? "",
-    email: x.email ?? "",
-    gsm: x.gsm ?? ""
-  }));
+const activeInstaller = computed(() => {
+  if (request.installerSelection.mode === "new") return request.installerSelection.newInstaller;
+  if (selectedInstaller.value) return installerEdit;
+  return request.installerSelection.newInstaller;
+});
+
+const renderedInstaller = computed(() => renderer.renderInstallerEmail(request));
+const renderedCustomer = computed(() => renderer.renderCustomerEmail(request, activeInstaller.value));
+
+const lastAuto = reactive({
+  language: request.language as Lang,
+  introLine: "",
+  confirmLine: "",
+  thanksLine: "",
+  placeLine: "",
+  introPrefix: "",
+  customerPrefix: "",
+});
+
+function initLastAutoFromCurrent(lang: Lang): void {
+  const d = defaultsByLang[lang];
+
+  lastAuto.language = lang;
+
+  lastAuto.introLine =
+    request.intro.requestLine.trim().length === 0 ? d.introLine : request.intro.requestLine.trim();
+
+  lastAuto.confirmLine =
+    request.ending.confirmLine.trim().length === 0 ? d.confirmLine : request.ending.confirmLine.trim();
+
+  lastAuto.thanksLine =
+    request.ending.thanksLine.trim().length === 0 ? d.thanksLine : request.ending.thanksLine.trim();
+
+  lastAuto.placeLine =
+    request.notes.installationPlaceLine.trim().length === 0 ? d.placeLine : request.notes.installationPlaceLine.trim();
+
+  lastAuto.introPrefix =
+    request.intro.salutationPrefix.trim().length === 0 ? d.introPrefix : request.intro.salutationPrefix.trim();
+
+  lastAuto.customerPrefix =
+    request.customerEmail.intro.salutationPrefix.trim().length === 0
+      ? d.customerPrefix
+      : request.customerEmail.intro.salutationPrefix.trim();
 }
 
-function onInstallerPick(): void {
-  const value = installerSearch.value.trim();
-
-  if (value.length === 0) {
-    request.installerSelection.mode = "existing";
-    request.installerSelection.selectedId = "";
-    return;
-  }
-
-  if (value.toLowerCase() === "nieuwe installateur") {
-    request.installerSelection.mode = "new";
-    request.installerSelection.selectedId = "";
-    return;
-  }
-
-  const normalized = value.toLowerCase();
-
-  // 1) exact match
-  let match = installers.value.find(x => x.companyName.trim().toLowerCase() === normalized) ?? null;
-
-  // 2) startsWith match
-  if (!match) {
-    match = installers.value.find(x => x.companyName.trim().toLowerCase().startsWith(normalized)) ?? null;
-  }
-
-  // 3) contains match
-  if (!match) {
-    match = installers.value.find(x => x.companyName.trim().toLowerCase().includes(normalized)) ?? null;
-  }
-
-  if (match) {
-    request.installerSelection.mode = "existing";
-    request.installerSelection.selectedId = match.id;
-    installerSearch.value = match.companyName;
-    return;
-  }
-
-  // unknown => new installer
-  request.installerSelection.mode = "new";
-  request.installerSelection.selectedId = "";
-  request.installerSelection.newInstaller.companyName = value;
-}
-
-function saveNewInstaller(): void {
-  const n = request.installerSelection.newInstaller;
-
-  const companyName = n.companyName.trim();
-  if (companyName.length === 0) return;
-
-  const id = companyName
-    .toLowerCase()
-    .split(" ")
-    .filter((x) => x.length > 0)
-    .join("-")
-    .split("&")
-    .join("and");
-
-  const record: InstallerRecord = {
-    id,
-    companyName,
-    contactPerson: n.contactPerson.trim(),
-    email: n.email.trim(),
-    gsm: n.gsm.trim(),
-  };
-
-  installerStore.upsert(record);
-  reloadInstallers();
-
-  request.installerSelection.mode = "existing";
-  request.installerSelection.selectedId = record.id;
-  installerSearch.value = record.companyName;
-}
+initLastAutoFromCurrent(request.language as Lang);
 
 watch(
-  () => request.language,
+  () => request.language as Lang,
   (lang) => {
-    const fr = lang === "fr";
+    const next = defaultsByLang[lang];
 
-    request.intro.salutationPrefix = fr ? "Bonjour" : "Beste";
+    setIfUnchanged(request.intro.salutationPrefix, lastAuto.introPrefix, next.introPrefix, (v) => {
+      request.intro.salutationPrefix = v;
+    });
 
-    if (request.intro.requestLine.trim() === "" ||
-      request.intro.requestLine.trim() === "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen." ||
-      request.intro.requestLine.trim() === "Veuillez contacter le client ci-dessous et planifier la mission suivante.") {
-      request.intro.requestLine = fr
-        ? "Veuillez contacter le client ci-dessous et planifier la mission suivante."
-        : "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen.";
-    }
+    setIfUnchanged(
+      request.customerEmail.intro.salutationPrefix,
+      lastAuto.customerPrefix,
+      next.customerPrefix,
+      (v) => {
+        request.customerEmail.intro.salutationPrefix = v;
+      }
+    );
 
-    if (request.ending.confirmLine.trim() === "" ||
-      request.ending.confirmLine.includes("Gelieve de datum") ||
-      request.ending.confirmLine.includes("Veuillez confirmer")) {
-      request.ending.confirmLine = fr
-        ? "Veuillez confirmer la date du rendez-vous à la planning et au client."
-        : "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.";
-    }
+    setIfUnchanged(request.intro.requestLine, lastAuto.introLine, next.introLine, (v) => {
+      request.intro.requestLine = v;
+    });
 
-    if (request.ending.thanksLine.trim() === "" ||
-      request.ending.thanksLine.includes("Alvast bedankt") ||
-      request.ending.thanksLine.includes("Merci d'avance")) {
-      request.ending.thanksLine = fr
-        ? "Merci d'avance pour le bon traitement de cette demande."
-        : "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht.";
-    }
+    setIfUnchanged(request.ending.confirmLine, lastAuto.confirmLine, next.confirmLine, (v) => {
+      request.ending.confirmLine = v;
+    });
 
-    if (request.notes.installationPlaceLine.trim() === "" ||
-      request.notes.installationPlaceLine.includes("te verifi") ||
-      request.notes.installationPlaceLine.includes("à vérifier")) {
-      request.notes.installationPlaceLine = fr
-        ? "Lieu d'installation : à vérifier avec le client"
-        : "Installatieplaats: te verifiëren met klant";
-    }
+    setIfUnchanged(request.ending.thanksLine, lastAuto.thanksLine, next.thanksLine, (v) => {
+      request.ending.thanksLine = v;
+    });
 
-    request.customerEmail.intro.salutationPrefix = fr ? "Bonjour" : "Beste";
+    setIfUnchanged(request.notes.installationPlaceLine, lastAuto.placeLine, next.placeLine, (v) => {
+      request.notes.installationPlaceLine = v;
+    });
+
+    lastAuto.language = lang;
+    lastAuto.introPrefix = request.intro.salutationPrefix.trim();
+    lastAuto.customerPrefix = request.customerEmail.intro.salutationPrefix.trim();
+    lastAuto.introLine = request.intro.requestLine.trim();
+    lastAuto.confirmLine = request.ending.confirmLine.trim();
+    lastAuto.thanksLine = request.ending.thanksLine.trim();
+    lastAuto.placeLine = request.notes.installationPlaceLine.trim();
   },
   { immediate: true }
 );
@@ -288,14 +228,85 @@ watch(
   { immediate: true }
 );
 
-// State save
 watch(
   () => request,
-  () => {
-    stateStore.save(request);
-  },
-  { deep: true },
+  () => stateStore.save(request),
+  { deep: true }
 );
+
+
+function onInstallerPick(): void {
+  const value = installerSearch.value.trim();
+
+  if (value.length === 0) {
+    request.installerSelection.mode = "existing";
+    request.installerSelection.selectedId = "";
+    return;
+  }
+
+  if (value.toLowerCase() === "nieuwe installateur") {
+    request.installerSelection.mode = "new";
+    request.installerSelection.selectedId = "";
+    return;
+  }
+
+  const normalized = value.toLowerCase();
+
+  let match = installers.value.find((x) => x.companyName.trim().toLowerCase() === normalized) ?? null;
+
+  if (!match) match = installers.value.find((x) => x.companyName.trim().toLowerCase().startsWith(normalized)) ?? null;
+  if (!match) match = installers.value.find((x) => x.companyName.trim().toLowerCase().includes(normalized)) ?? null;
+
+  if (match) {
+    request.installerSelection.mode = "existing";
+    request.installerSelection.selectedId = match.id;
+    installerSearch.value = match.companyName;
+    return;
+  }
+
+  request.installerSelection.mode = "new";
+  request.installerSelection.selectedId = "";
+  request.installerSelection.newInstaller.companyName = value;
+}
+
+function pickExistingInstaller(id: string): void {
+  const ins = installers.value.find((x) => x.id === id);
+  if (!ins) return;
+
+  request.installerSelection.mode = "existing";
+  request.installerSelection.selectedId = ins.id;
+  installerSearch.value = ins.companyName;
+  installerOpen.value = false;
+}
+
+function pickNewInstaller(): void {
+  request.installerSelection.mode = "new";
+  request.installerSelection.selectedId = "";
+  installerOpen.value = false;
+}
+
+function saveNewInstaller(): void {
+  const n = request.installerSelection.newInstaller;
+  const companyName = n.companyName.trim();
+  if (companyName.length === 0) return;
+
+  const id = slugifyId(companyName);
+
+  const record: InstallerRecord = {
+    id,
+    companyName,
+    contactPerson: n.contactPerson.trim(),
+    email: n.email.trim(),
+    gsm: n.gsm.trim(),
+  };
+
+  installerStore.upsert(record);
+  reloadInstallers();
+
+  request.installerSelection.mode = "existing";
+  request.installerSelection.selectedId = record.id;
+  installerSearch.value = record.companyName;
+}
 
 function saveSelectedInstallerEdits(): void {
   const sel = selectedInstaller.value;
@@ -306,7 +317,7 @@ function saveSelectedInstallerEdits(): void {
     companyName: installerEdit.companyName.trim(),
     contactPerson: installerEdit.contactPerson.trim(),
     email: installerEdit.email.trim(),
-    gsm: installerEdit.gsm.trim()
+    gsm: installerEdit.gsm.trim(),
   });
 
   reloadInstallers();
@@ -346,9 +357,7 @@ function onVehiclePaste(e: ClipboardEvent): void {
   request.vehicleTable.plain = parsed.plain;
 
   const target = e.target as HTMLElement | null;
-  if (target) {
-    target.innerHTML = "";
-  }
+  if (target) target.innerHTML = "";
 }
 
 async function onVehicleFileSelected(e: Event): Promise<void> {
@@ -383,23 +392,18 @@ function onVehicleDragOver(e: DragEvent): void {
   e.preventDefault();
 }
 
-function clearVehicleTable(): void {
-  request.vehicleTable.source = "none";
-  request.vehicleTable.html = "";
-  request.vehicleTable.plain = "";
-}
-
 function addVehicle(): void {
-  request.vehicles.push({
-    brand: "",
-    model: "",
-    quantity: 1,
-    licensePlate: "",
-  });
+  request.vehicles.push({ brand: "", model: "", quantity: 1, licensePlate: "" });
 }
 
 function removeVehicle(index: number): void {
   request.vehicles.splice(index, 1);
+}
+
+function clearVehicleTable(): void {
+  request.vehicleTable.source = "none";
+  request.vehicleTable.html = "";
+  request.vehicleTable.plain = "";
 }
 
 async function copyInstaller(): Promise<void> {
@@ -423,26 +427,8 @@ async function copyCustomer(): Promise<void> {
     status.value = `Kon niet kopieren: ${message}`;
   }
 }
-
-const installerOpen = ref<boolean>(false);
-
-function pickExistingInstaller(id: string): void {
-  const ins = installers.value.find(x => x.id === id);
-  if (!ins) return;
-
-  request.installerSelection.mode = "existing";
-  request.installerSelection.selectedId = ins.id;
-  installerSearch.value = ins.companyName;
-  installerOpen.value = false;
-}
-
-function pickNewInstaller(): void {
-  request.installerSelection.mode = "new";
-  request.installerSelection.selectedId = "";
-  installerOpen.value = false;
-}
-
 </script>
+
 
 <template>
   <TopBar brandText="Geofleet V2 Planning" :leftItems="[{ key: 'Installlers', label: 'Installateurs', active: true }]"
@@ -477,7 +463,7 @@ function pickNewInstaller(): void {
             <input v-model="request.intro.salutationName" placeholder="Naam" />
           </div>
 
-          <label style="margin-top: 10px">Intro zin</label>
+          <label style="margin-top: 10px">Intro</label>
           <textarea class="textarea-compact muted-editable" v-model="request.intro.requestLine"></textarea>
         </div>
 
@@ -494,11 +480,9 @@ function pickNewInstaller(): void {
               <label>Tijd</label>
               <input type="time" v-model="request.planning.plannedTime" />
               <div class="hint">Leeg = te bepalen met klant</div>
-            </div>
-            <label style="margin-top: 10px;">Opmerking datum installatie</label>
-
-
+            </div>    
           </div>
+            <label style="margin-top: 10px;">Opmerking datum installatie</label>
           <textarea class="textarea-compact" v-model="request.notes.planningNotes" placeholder="Vrij veld"></textarea>
 
         </div>

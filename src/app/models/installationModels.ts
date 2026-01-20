@@ -2,7 +2,7 @@ export type VehicleLine = {
   brand: string;
   model: string;
   quantity: number;
-  licensePlate: string;
+  licensePlate?: string;
 };
 
 export type VehicleTable = {
@@ -76,21 +76,17 @@ export type CustomerEmailData = {
 
 export type InstallationRequest = {
   language: "nl" | "fr";
-
   intro: IntroText;
   planning: PlanningInfo;
   installation: InstallationDetails;
   vehicles: VehicleLine[];
   vehicleTable: VehicleTable;
-
   location: LocationInfo;
   contact: ContactInfo;
   notes: NotesInfo;
   ending: EndingText;
-
   senderName: string;
   brandPrimaryColorHex: string;
-
   customerEmail: CustomerEmailData;
   installerSelection: InstallerSelection;
 };
