@@ -27,12 +27,91 @@ const status = ref<string>("");
 
 installerStore.ensureSeed([
   {
-    id: "ct-protection",
+    id: "1",
     companyName: "Car&Truck Protection",
     contactPerson: "Dhr. Ronny Michiels",
     email: "ronny@ronny.be",
     gsm: "0476 45 75 75",
   },
+    {
+    id: "2",
+    companyName: "VDB Install",
+    contactPerson: "Anja Goossens",
+    email: "",
+    gsm: "",
+  },
+      {
+    id: "3",
+    companyName: "Desjokken BV",
+    contactPerson: "Joris Van Gijseghem",
+    email: "desjokken@gmail.com",
+    gsm: "+32 473 37 52 95",
+  },
+      {
+    id: "4",
+    companyName: "AudioJetcar",
+    contactPerson: "Frederic Battheu",
+    email: "",
+    gsm: "",
+  },
+        {
+    id: "5",
+    companyName: "VES",
+    contactPerson: "Thomas Solomé",
+    email: "",
+    gsm: "",
+  },
+          {
+    id: "6",
+    companyName: "Bruthi",
+    contactPerson: "Dirk Bruyninx",
+    email: "",
+    gsm: "",
+  },
+  {
+      id: "7",
+    companyName: "BR2",
+    contactPerson: "Laurent Brasseur",
+    email: "",
+    gsm: "",
+  },
+    {
+      id: "8",
+    companyName: "Car&Co",
+    contactPerson: "Maarten Houben",
+    email: "",
+    gsm: "",
+  },
+      {
+      id: "9",
+    companyName: "CJ Tracking",
+    contactPerson: "Cindy Laussaunière",
+    email: "",
+    gsm: "",
+  },
+        {
+      id: "10",
+    companyName: "Tracing.LU",
+    contactPerson: "Alexandre Maniora",
+    email: "",
+    gsm: "",
+  },
+          {
+      id: "11",
+    companyName: "Rietveld",
+    contactPerson: "Ruud Stigter",
+    email: "",
+    gsm: "",
+  },
+            {
+      id: "12",
+    companyName: "Javaco",
+    contactPerson: "Niko Gijs",
+    email: "",
+    gsm: "",
+  },
+
+  
 ]);
 
 reloadInstallers();
