@@ -28,7 +28,7 @@ export class TableImportService implements ITableImportService {
             return { html: "", plain: "" };
         }
 
-const rows = this.normalizeRows(this.parseDelimited(trimmed));
+        const rows = this.normalizeRows(this.parseDelimited(trimmed));
         const html = this.rowsToHtmlTable(rows);
         const plain = this.rowsToPlain(rows);
 
@@ -81,13 +81,13 @@ const rows = this.normalizeRows(this.parseDelimited(trimmed));
             if (!allowedTags.has(node.tagName)) {
                 toRemove.push(node);
             } else {
-               
+
                 for (const attr of Array.from(node.attributes)) {
                     const name = attr.name.toLowerCase();
                     if (name.startsWith("on")) node.removeAttribute(attr.name);
                     if (name === "href") node.removeAttribute(attr.name);
                     if (name === "src") node.removeAttribute(attr.name);
-                    if (name === "style") {                        
+                    if (name === "style") {
                     }
                 }
             }
@@ -126,7 +126,7 @@ const rows = this.normalizeRows(this.parseDelimited(trimmed));
         return rows.join("\n");
     }
 
-    private parseDelimited(text: string): string[][] { 
+    private parseDelimited(text: string): string[][] {
         const firstLine = text.split(/\r?\n/)[0] || "";
         const delimiter = firstLine.includes("\t") ? "\t" : firstLine.includes(";") ? ";" : ",";
 
@@ -234,49 +234,49 @@ const rows = this.normalizeRows(this.parseDelimited(trimmed));
     }
 
     private normalizeRows(rows: string[][]): string[][] {
-  if (rows.length === 0) return rows;
+        if (rows.length === 0) return rows;
 
-  const trimmed = rows.map(r => this.trimRowRight(r));
+        const trimmed = rows.map(r => this.trimRowRight(r));
 
-  const maxCols = trimmed.reduce((m, r) => Math.max(m, r.length), 0);
-  if (maxCols === 0) return [];
+        const maxCols = trimmed.reduce((m, r) => Math.max(m, r.length), 0);
+        if (maxCols === 0) return [];
 
-  const padded = trimmed.map(r => {
-    const copy = r.slice();
-    while (copy.length < maxCols) copy.push("");
-    return copy;
-  });
+        const padded = trimmed.map(r => {
+            const copy = r.slice();
+            while (copy.length < maxCols) copy.push("");
+            return copy;
+        });
 
-  const keep: boolean[] = new Array(maxCols).fill(false);
+        const keep: boolean[] = new Array(maxCols).fill(false);
 
-  for (let c = 0; c < maxCols; c++) {
-    for (let r = 0; r < padded.length; r++) {
-      const cell = padded[r]?.[c] ?? "";
-      if (cell.trim().length > 0) {
-        keep[c] = true;
-        break;
-      }
+        for (let c = 0; c < maxCols; c++) {
+            for (let r = 0; r < padded.length; r++) {
+                const cell = padded[r]?.[c] ?? "";
+                if (cell.trim().length > 0) {
+                    keep[c] = true;
+                    break;
+                }
+            }
+        }
+
+        const result = padded.map(r => r.filter((_, idx) => keep[idx]));
+        return result.map(r => this.trimRowRight(r));
     }
-  }
-
-  const result = padded.map(r => r.filter((_, idx) => keep[idx]));
-  return result.map(r => this.trimRowRight(r));
-}
 
 
-   private trimRowRight(row: string[]): string[] {
-  let end = row.length;
+    private trimRowRight(row: string[]): string[] {
+        let end = row.length;
 
-  while (end > 0) {
-    const value = row[end - 1] ?? "";
-    if (value.trim().length > 0) {
-      break;
+        while (end > 0) {
+            const value = row[end - 1] ?? "";
+            if (value.trim().length > 0) {
+                break;
+            }
+            end--;
+        }
+
+        return row.slice(0, end);
     }
-    end--;
-  }
-
-  return row.slice(0, end);
-}
 
 
 

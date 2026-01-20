@@ -32,3 +32,11 @@ body {
   background: var(--page-bg);
   color: var(--text);
 }
+
+button.danger {
+  border: 1px solid #c9c9c9;
+}
+
+button.danger:hover {
+  border-color: rgb(194, 14, 26);
+}

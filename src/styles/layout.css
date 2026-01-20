@@ -43,3 +43,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+.tabbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tabbar button {
+  padding: 6px 10px;
+  background: #e3e3e3;
+  border: 1px solid #aaaaaa;
+  border-radius: 2px;
+  font-size: 11px;
+}
+
+.tabbar button.active {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+.tabbar {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 10px 0;
+}
+
+.tabbar button {
+  padding: 6px 10px;
+  background: #e3e3e3;
+  border: 1px solid #aaaaaa;
+  border-radius: 2px;
+  font-size: 11px;
+}
+
+.tabbar button.active {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
