@@ -472,8 +472,6 @@ function pickNewInstaller(): void {
             <option value="nl">Nederlands</option>
             <option value="fr">Français</option>
           </select>
-
-          <div class="hint">Deze taal bepaalt de vaste teksten en titels in beide mails.</div>
         </div>
 
         <div class="section">
