@@ -17,7 +17,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return { subject, htmlBody };
   }
 
-  
+
 
   public renderCustomerEmail(request: InstallationRequest, installer: InstallerInfo): TemplateResult {
     const subject = this.buildCustomerSubject(request);
@@ -42,7 +42,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return `Planning ${value}`.trim();
   }
 
-  
+
 
   private t(lang: "nl" | "fr") {
     const fr = lang === "fr";
@@ -125,7 +125,16 @@ export class TemplateRenderer implements ITemplateRenderer {
     html.push(`<li><strong>${this.htmlEncode(tr.date)}:</strong> ${this.htmlEncode(this.formatDate(r))}</li>`);
     html.push(`<li><strong>${this.htmlEncode(tr.time)}:</strong> ${this.htmlEncode(this.formatTime(r))}</li>`);
     html.push(`</ul>`);
-    html.push(`<br>`);
+   const noDate = r.planning.plannedDate.trim().length === 0;
+const noTime = r.planning.plannedTime.trim().length === 0;
+const showPlanningNote = noDate && noTime && r.notes.planningNotes.trim().length > 0;
+
+if (showPlanningNote) {
+  html.push(
+    `<div style="margin-top: 6px;"><strong>${this.htmlEncode(tr.notes)}:</strong> ${this.htmlEncode(r.notes.planningNotes.trim())}</div>`
+  );
+}
+html.push(`<br>`); 
 
     html.push(this.sectionTitle(tr.installationDetails, color));
     if (r.installation.detailsText.trim().length > 0) {
@@ -177,9 +186,6 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html.join("").trim();
   }
 
-
-
-
   private buildCustomerHtml(r: InstallationRequest, installer: InstallerInfo): string {
     const color = r.brandPrimaryColorHex.trim().length > 0 ? r.brandPrimaryColorHex.trim() : "#C20E1A";
     const html: string[] = [];
@@ -195,11 +201,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     html.push(`<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #111;">`);
 
     html.push(`<div>${this.htmlEncode(greeting)}</div>`);
-    html.push(`<br>`);
-    html.push(`<br>`);
-
-
-
+    html.push(`<br>`);    
 
     const person = installerPerson.trim();
     const company = installerCompany.trim();
@@ -228,6 +230,26 @@ export class TemplateRenderer implements ITemplateRenderer {
 
 
     html.push(`<div>${this.htmlEncode(tr.customerIntroPrefix)} ${who} ${this.htmlEncode(tr.customerWillContact)}</div>`);
+    html.push(`<br>`);
+
+const hasDate = r.planning.plannedDate.trim().length > 0;
+const hasTime = r.planning.plannedTime.trim().length > 0;
+
+if (hasDate || hasTime) {
+  html.push(this.sectionTitle(tr.dateInstall, color));
+  html.push(`<ul style="margin-top: 6px;">`);
+
+  if (hasDate) {
+    html.push(`<li><strong>${this.htmlEncode(tr.date)}:</strong> ${this.htmlEncode(r.planning.plannedDate.trim())}</li>`);
+  }
+  if (hasTime) {
+    html.push(`<li><strong>${this.htmlEncode(tr.time)}:</strong> ${this.htmlEncode(r.planning.plannedTime.trim())}</li>`);
+  }
+
+  html.push(`</ul>`);
+  html.push(`<br>`);
+}
+
 
     html.push(this.sectionTitle(tr.vehicleDetails, color));
     const vehicleHtml = this.buildVehicleHtml(r);
@@ -269,7 +291,6 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html.join("").trim();
   }
 
-
   private buildInstallerGreeting(r: InstallationRequest): string {
     const tr = this.t(r.language);
     const prefix = r.intro.salutationPrefix.trim().length > 0 ? r.intro.salutationPrefix.trim() : tr.best;
@@ -288,35 +309,34 @@ export class TemplateRenderer implements ITemplateRenderer {
     return r.planning.plannedTime.trim().length === 0 ? tr.tbdCustomer : r.planning.plannedTime.trim();
   }
 
-private buildVehicleHtml(r: InstallationRequest): string {
-  const tr = this.t(r.language);
+  private buildVehicleHtml(r: InstallationRequest): string {
+    const tr = this.t(r.language);
 
-  if (r.vehicleTable.html.trim().length > 0) {
-    return this.hidePlateColumnIfEmpty(r.vehicleTable.html, tr.thPlate);
+    if (r.vehicleTable.html.trim().length > 0) {
+      return this.hidePlateColumnIfEmpty(r.vehicleTable.html, tr.thPlate);
+    }
+
+    if (r.vehicles.length === 0) return "";
+
+    const hasAnyPlate = r.vehicles.some(v => (v.licensePlate ?? "").trim().length > 0);
+
+    const header = hasAnyPlate
+      ? [tr.thBrand, tr.thModel, tr.thQty, tr.thPlate]
+      : [tr.thBrand, tr.thModel, tr.thQty];
+
+    const rows = r.vehicles.map(v => {
+      const base = [
+        (v.brand ?? "").trim(),
+        (v.model ?? "").trim(),
+        String(v.quantity ?? 1),
+      ];
+
+      if (hasAnyPlate) base.push((v.licensePlate ?? "").trim());
+      return base;
+    });
+
+    return this.rowsToHtmlTable([header, ...rows]);
   }
-
-  if (r.vehicles.length === 0) return "";
-
-  const hasAnyPlate = r.vehicles.some(v => (v.licensePlate ?? "").trim().length > 0);
-
-  const header = hasAnyPlate
-    ? [tr.thBrand, tr.thModel, tr.thQty, tr.thPlate]
-    : [tr.thBrand, tr.thModel, tr.thQty];
-
-  const rows = r.vehicles.map(v => {
-    const base = [
-      (v.brand ?? "").trim(),
-      (v.model ?? "").trim(),
-      String(v.quantity ?? 1),
-    ];
-
-    if (hasAnyPlate) base.push((v.licensePlate ?? "").trim());
-    return base;
-  });
-
-  return this.rowsToHtmlTable([header, ...rows]);
-}
-
 
   private rowsToHtmlTable(rows: string[][]): string {
     if (rows.length === 0) return "";
@@ -368,81 +388,81 @@ private buildVehicleHtml(r: InstallationRequest): string {
       .split("\"").join("&quot;");
   }
 
-private hidePlateColumnIfEmpty(htmlTable: string, translatedPlateHeader: string): string {
-  const input = htmlTable.trim();
-  if (input.length === 0) return input;
+  private hidePlateColumnIfEmpty(htmlTable: string, translatedPlateHeader: string): string {
+    const input = htmlTable.trim();
+    if (input.length === 0) return input;
 
-  if (typeof DOMParser === "undefined") return input;
+    if (typeof DOMParser === "undefined") return input;
 
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(input, "text/html");
-    const table = doc.querySelector("table");
-    if (!table) return input;
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(input, "text/html");
+      const table = doc.querySelector("table");
+      if (!table) return input;
 
-    const rows = Array.from(table.querySelectorAll("tr"));
-    if (rows.length === 0) return input;
+      const rows = Array.from(table.querySelectorAll("tr"));
+      if (rows.length === 0) return input;
 
-    const headerRow = rows[0];
-    if (!headerRow) return input;
+      const headerRow = rows[0];
+      if (!headerRow) return input;
 
-    const headerCells = Array.from(headerRow.querySelectorAll("th, td"));
-    if (headerCells.length === 0) return input;
+      const headerCells = Array.from(headerRow.querySelectorAll("th, td"));
+      if (headerCells.length === 0) return input;
 
-    const norm = (s: string) => s.trim().toLowerCase();
+      const norm = (s: string) => s.trim().toLowerCase();
 
-    const plateHeaders = new Set<string>([
-      norm(translatedPlateHeader),
-      "kenteken",
-      "nummerplaat",
-      "plaque",
-      "immatriculation",
-      "license plate",
-      "plate",
-    ]);
+      const plateHeaders = new Set<string>([
+        norm(translatedPlateHeader),
+        "kenteken",
+        "nummerplaat",
+        "plaque",
+        "immatriculation",
+        "license plate",
+        "plate",
+      ]);
 
-    const plateIndex = headerCells.findIndex((c) => plateHeaders.has(norm(c.textContent ?? "")));
-    if (plateIndex < 0) return input;
+      const plateIndex = headerCells.findIndex((c) => plateHeaders.has(norm(c.textContent ?? "")));
+      if (plateIndex < 0) return input;
 
-    // Check if any data row has a non-empty value in plate column
-    let anyNonEmpty = false;
+      // Check if any data row has a non-empty value in plate column
+      let anyNonEmpty = false;
 
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row) continue;
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row) continue;
 
-      const cells = Array.from(row.querySelectorAll("th, td"));
-      if (plateIndex >= cells.length) continue;
+        const cells = Array.from(row.querySelectorAll("th, td"));
+        if (plateIndex >= cells.length) continue;
 
-      const cell = cells[plateIndex];
-      const text = (cell?.textContent ?? "").trim();
-      if (text.length > 0) {
-        anyNonEmpty = true;
-        break;
+        const cell = cells[plateIndex];
+        const text = (cell?.textContent ?? "").trim();
+        if (text.length > 0) {
+          anyNonEmpty = true;
+          break;
+        }
       }
+
+      if (anyNonEmpty) return input;
+
+      // Remove the column from each row
+      for (const row of rows) {
+        const cells = Array.from(row.querySelectorAll("th, td"));
+        if (plateIndex >= cells.length) continue;
+
+        const cell = cells[plateIndex];
+        if (cell) cell.remove();
+      }
+
+      // Keep wrapper div if the table was wrapped
+      const wrapperDiv = table.parentElement && table.parentElement.tagName.toLowerCase() === "div"
+        ? table.parentElement
+        : null;
+
+      return wrapperDiv ? wrapperDiv.outerHTML : table.outerHTML;
+    } catch {
+      return input;
     }
-
-    if (anyNonEmpty) return input;
-
-    // Remove the column from each row
-    for (const row of rows) {
-      const cells = Array.from(row.querySelectorAll("th, td"));
-      if (plateIndex >= cells.length) continue;
-
-      const cell = cells[plateIndex];
-      if (cell) cell.remove();
-    }
-
-    // Keep wrapper div if the table was wrapped
-    const wrapperDiv = table.parentElement && table.parentElement.tagName.toLowerCase() === "div"
-      ? table.parentElement
-      : null;
-
-    return wrapperDiv ? wrapperDiv.outerHTML : table.outerHTML;
-  } catch {
-    return input;
   }
-}
 
 
 }

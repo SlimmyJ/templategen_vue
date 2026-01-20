@@ -11,8 +11,6 @@ export type VehicleTable = {
   plain: string;
 };
 
-
-
 export type PlanningInfo = {
   plannedDate: string;
   plannedTime: string;
@@ -48,6 +46,7 @@ export type EndingText = {
 
 export type NotesInfo = {
   vehicleNotes: string;
+  planningNotes: string;
   installationPlaceLine: string;
   installationPlaceNotes: string;
 };
@@ -147,6 +146,7 @@ export function createDefaultRequest(): InstallationRequest {
 
     notes: {
       vehicleNotes: "",
+      planningNotes: "",
       installationPlaceLine: "Installatieplaats: te verifiëren met klant",
       installationPlaceNotes: ""
     },

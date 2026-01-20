@@ -495,7 +495,12 @@ function pickNewInstaller(): void {
               <input type="time" v-model="request.planning.plannedTime" />
               <div class="hint">Leeg = te bepalen met klant</div>
             </div>
+            <label style="margin-top: 10px;">Opmerking datum installatie</label>
+
+
           </div>
+          <textarea class="textarea-compact" v-model="request.notes.planningNotes" placeholder="Vrij veld"></textarea>
+
         </div>
 
         <div class="section">
@@ -526,7 +531,7 @@ function pickNewInstaller(): void {
           </div>
 
           <label style="margin-top: 10px">Opmerking voertuigen</label>
-          <textarea v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
+          <textarea class="textarea-compact" v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
 
           <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px">
             <div class="hint">
@@ -580,7 +585,7 @@ function pickNewInstaller(): void {
           </div>
 
           <label style="margin-top: 10px">Opmerking installatieplaats</label>
-          <textarea v-model="request.notes.installationPlaceNotes" placeholder="Vrij veld"></textarea>
+          <textarea class="textarea-compact" v-model="request.notes.installationPlaceNotes" placeholder="Vrij veld"></textarea>
         </div>
         <div class="section">
           <div class="section-title">Contactpersoon</div>
