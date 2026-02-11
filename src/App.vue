@@ -77,6 +77,8 @@ const activeTab = ref<PreviewTab>("installer");
 const renderer = new TemplateRenderer();
 const clipboard = new ClipboardService();
 const status = ref<string>("");
+const renderedCalendar = computed(() => renderer.renderCalendarSnippet(request));
+
 
 
 installerStore.ensureSeed([
@@ -427,6 +429,20 @@ async function copyCustomer(): Promise<void> {
     status.value = `Kon niet kopieren: ${message}`;
   }
 }
+
+async function copyCalendar(): Promise<void> {
+  status.value = "";
+  try {
+    await clipboard.copyHtmlOnly(renderedCalendar.value.htmlBody);
+    status.value = "Kalender snippet gekopieerd (HTML).";
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Onbekende fout";
+    status.value = `Kon niet kopieren: ${message}`;
+  }
+}
+
+
+
 </script>
 
 
@@ -712,6 +728,8 @@ async function copyCustomer(): Promise<void> {
             Copy installateur
           </button>
           <button type="button" @click="copyCustomer">Copy klant</button>
+          <button type="button" @click="copyCalendar">Copy kalender</button>
+
           <div class="spacer"></div>
           <button type="button" class="btn-reset" @click="resetForm">
             Reset

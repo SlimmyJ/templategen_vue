@@ -8,6 +8,8 @@ export type TemplateResult = {
 export interface ITemplateRenderer {
   renderInstallerEmail(request: InstallationRequest): TemplateResult;
   renderCustomerEmail(request: InstallationRequest, installer: InstallerInfo): TemplateResult;
+  renderCalendarSnippet(request: InstallationRequest): TemplateResult;
+
 }
 
 type Tr = ReturnType<TemplateRenderer["t"]>;
@@ -26,6 +28,16 @@ export class TemplateRenderer implements ITemplateRenderer {
       htmlBody: this.buildCustomerHtml(request, installer),
     };
   }
+
+  public renderCalendarSnippet(request: InstallationRequest): TemplateResult {
+  return {
+    subject: "",
+    htmlBody: this.buildInstallerCalendarHtml(request),
+  };
+}
+
+
+
 
 private subjectSafe(value: string): string {
   return value.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
@@ -132,6 +144,94 @@ private buildCustomerSubject(r: InstallationRequest): string {
     html.push(this.wrapperEnd());
     return html.join("").trim();
   }
+
+private buildInstallerCalendarHtml(r: InstallationRequest): string {
+  const tr = this.t(r.language);
+  const color = this.getBrandColor(r);
+
+  const placeTitle =
+    r.notes.installationPlaceLine.trim().length > 0
+      ? r.notes.installationPlaceLine.trim()
+      : tr.installPlace;
+
+  const html: string[] = [];
+
+  const planningNotes = r.notes.planningNotes.trim();
+  const detailsText = r.installation.detailsText.trim();
+  const vehicleNotes = r.notes.vehicleNotes.trim();
+  const placeNotes = r.notes.installationPlaceNotes.trim();
+
+  html.push(this.wrapperStart());
+
+  // DATE/TIME
+  html.push(this.sectionTitle(tr.dateInstall, color));
+  html.push(`<ul style="margin-top: 6px;">`);
+  html.push(`<li><strong>${this.e(tr.date)}:</strong> ${this.e(this.formatDate(r, tr))}</li>`);
+  html.push(`<li><strong>${this.e(tr.time)}:</strong> ${this.e(this.formatTime(r, tr))}</li>`);
+  html.push(`</ul>`);
+
+  if (planningNotes.length > 0) {
+    html.push(
+      `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(planningNotes, true)}</div>`
+    );
+  }
+
+  html.push(`<br>`);
+
+  // INSTALLATION DETAILS
+  html.push(this.sectionTitle(tr.installationDetails, color));
+  if (detailsText.length > 0) {
+    html.push(`<div style="margin-top: 6px;">${this.e(detailsText, true)}</div>`);
+  }
+  html.push(`<br>`);
+
+  // VEHICLES
+  html.push(this.sectionTitle(tr.vehicleDetails, color));
+  html.push(this.buildVehicleHtml(r, tr));
+
+  if (vehicleNotes.length > 0) {
+    html.push(
+      `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(vehicleNotes, true)}</div>`
+    );
+  }
+  html.push(`<br>`);
+
+  // LOCATION
+  html.push(this.sectionTitle(placeTitle, color));
+  html.push(`<div style="margin-top: 6px;">`);
+  html.push(`<div><strong>${this.e(tr.location)}:</strong> ${this.e(r.location.name)}</div>`);
+  html.push(`<div>${this.e(r.location.street)}</div>`);
+  html.push(`<div>${this.e(r.location.postalCity.trim())}</div>`);
+  html.push(`</div>`);
+
+  if (placeNotes.length > 0) {
+    html.push(
+      `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(placeNotes, true)}</div>`
+    );
+  }
+
+  html.push(`<br>`);
+
+  // CONTACT
+  html.push(this.sectionTitle(tr.contact, color));
+  html.push(`<div style="margin-top: 6px;">`);
+  html.push(`<div><strong>${this.e(tr.name)}:</strong> ${this.e(r.contact.name)}</div>`);
+
+  const tel = r.contact.tel.trim();
+  const gsm = r.contact.gsm.trim();
+  const email = r.contact.email.trim();
+
+  if (tel.length > 0) html.push(`<div><strong>${this.e(tr.tel)}:</strong> ${this.e(tel)}</div>`);
+  if (gsm.length > 0) html.push(`<div><strong>${this.e(tr.gsm)}:</strong> ${this.e(gsm)}</div>`);
+  if (email.length > 0) html.push(`<div><strong>${this.e(tr.email)}:</strong> ${this.e(email)}</div>`);
+
+  html.push(`</div>`);
+
+  html.push(this.wrapperEnd());
+  return html.join("").trim();
+}
+
+
 
   private buildCustomerHtml(r: InstallationRequest, installer: InstallerInfo): string {
     const tr = this.t(r.language);
