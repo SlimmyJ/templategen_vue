@@ -1,54 +1,15 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
-import { createDefaultRequest } from "./app/models/installationModels";
 import { TemplateRenderer } from "./app/services/templateRenderer";
 import { ClipboardService } from "./app/services/clipboardService";
 import TopBar from "./app/components/TopBar.vue";
 import { InstallerStore, type InstallerRecord } from "./app/services/installerStore";
 import { TableImportService } from "./app/services/tableImportService";
-import { LocalStateService } from "./app/services/localStateService";
+import { useInstallationRequest } from "./app/composables/useInstallationRequest";
+import { LocalInstallationRequestRepository } from "./app/repositories/local/LocalInstallationRequestRepository";
 
 type PreviewTab = "installer" | "customer";
-type Lang = "nl" | "fr";
 
-type LangDefaults = {
-  introPrefix: string;
-  introLine: string;
-  confirmLine: string;
-  thanksLine: string;
-  placeLine: string;
-  customerPrefix: string;
-};
-
-const defaultsByLang: Record<Lang, LangDefaults> = {
-  nl: {
-    introPrefix: "Beste",
-    introLine: "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen.",
-    confirmLine: "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.",
-    thanksLine: "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht.",
-    placeLine: "Installatieplaats: te verifiëren met klant",
-    customerPrefix: "Beste",
-  },
-  fr: {
-    introPrefix: "Bonjour",
-    introLine: "Veuillez contacter le client ci-dessous et planifier la mission suivante.",
-    confirmLine: "Veuillez confirmer la date du rendez-vous à la planning et au client.",
-    thanksLine: "Merci d'avance pour le bon traitement de cette demande.",
-    placeLine: "Lieu d'installation : à vérifier avec le client",
-    customerPrefix: "Bonjour",
-  },
-};
-
-function setIfUnchanged(
-  current: string,
-  previousAuto: string,
-  nextAuto: string,
-  setter: (v: string) => void
-): void {
-  const c = (current ?? "").trim();
-  const p = (previousAuto ?? "").trim();
-  if (c.length === 0 || c === p) setter(nextAuto);
-}
 
 function slugifyId(value: string): string {
   return value
@@ -60,12 +21,10 @@ function slugifyId(value: string): string {
     .split("&")
     .join("and");
 }
-
+const requestRepository = new LocalInstallationRequestRepository();
+const { request, reset } = useInstallationRequest(requestRepository);
 const tableImport = new TableImportService();
-const stateStore = new LocalStateService();
-const loaded = stateStore.load();
 
-const request = reactive(loaded ?? createDefaultRequest());
 
 const installerStore = new InstallerStore();
 const installers = ref<InstallerRecord[]>([]);
@@ -129,89 +88,6 @@ const activeInstaller = computed(() => {
 const renderedInstaller = computed(() => renderer.renderInstallerEmail(request));
 const renderedCustomer = computed(() => renderer.renderCustomerEmail(request, activeInstaller.value));
 
-const lastAuto = reactive({
-  language: request.language as Lang,
-  introLine: "",
-  confirmLine: "",
-  thanksLine: "",
-  placeLine: "",
-  introPrefix: "",
-  customerPrefix: "",
-});
-
-function initLastAutoFromCurrent(lang: Lang): void {
-  const d = defaultsByLang[lang];
-
-  lastAuto.language = lang;
-
-  lastAuto.introLine =
-    request.intro.requestLine.trim().length === 0 ? d.introLine : request.intro.requestLine.trim();
-
-  lastAuto.confirmLine =
-    request.ending.confirmLine.trim().length === 0 ? d.confirmLine : request.ending.confirmLine.trim();
-
-  lastAuto.thanksLine =
-    request.ending.thanksLine.trim().length === 0 ? d.thanksLine : request.ending.thanksLine.trim();
-
-  lastAuto.placeLine =
-    request.notes.installationPlaceLine.trim().length === 0 ? d.placeLine : request.notes.installationPlaceLine.trim();
-
-  lastAuto.introPrefix =
-    request.intro.salutationPrefix.trim().length === 0 ? d.introPrefix : request.intro.salutationPrefix.trim();
-
-  lastAuto.customerPrefix =
-    request.customerEmail.intro.salutationPrefix.trim().length === 0
-      ? d.customerPrefix
-      : request.customerEmail.intro.salutationPrefix.trim();
-}
-
-initLastAutoFromCurrent(request.language as Lang);
-
-watch(
-  () => request.language as Lang,
-  (lang) => {
-    const next = defaultsByLang[lang];
-
-    setIfUnchanged(request.intro.salutationPrefix, lastAuto.introPrefix, next.introPrefix, (v) => {
-      request.intro.salutationPrefix = v;
-    });
-
-    setIfUnchanged(
-      request.customerEmail.intro.salutationPrefix,
-      lastAuto.customerPrefix,
-      next.customerPrefix,
-      (v) => {
-        request.customerEmail.intro.salutationPrefix = v;
-      }
-    );
-
-    setIfUnchanged(request.intro.requestLine, lastAuto.introLine, next.introLine, (v) => {
-      request.intro.requestLine = v;
-    });
-
-    setIfUnchanged(request.ending.confirmLine, lastAuto.confirmLine, next.confirmLine, (v) => {
-      request.ending.confirmLine = v;
-    });
-
-    setIfUnchanged(request.ending.thanksLine, lastAuto.thanksLine, next.thanksLine, (v) => {
-      request.ending.thanksLine = v;
-    });
-
-    setIfUnchanged(request.notes.installationPlaceLine, lastAuto.placeLine, next.placeLine, (v) => {
-      request.notes.installationPlaceLine = v;
-    });
-
-    lastAuto.language = lang;
-    lastAuto.introPrefix = request.intro.salutationPrefix.trim();
-    lastAuto.customerPrefix = request.customerEmail.intro.salutationPrefix.trim();
-    lastAuto.introLine = request.intro.requestLine.trim();
-    lastAuto.confirmLine = request.ending.confirmLine.trim();
-    lastAuto.thanksLine = request.ending.thanksLine.trim();
-    lastAuto.placeLine = request.notes.installationPlaceLine.trim();
-  },
-  { immediate: true }
-);
-
 watch(
   () => selectedInstaller.value,
   (sel) => {
@@ -229,13 +105,6 @@ watch(
   },
   { immediate: true }
 );
-
-watch(
-  () => request,
-  () => stateStore.save(request),
-  { deep: true }
-);
-
 
 function onInstallerPick(): void {
   const value = installerSearch.value.trim();
@@ -343,8 +212,7 @@ function deleteSelectedInstaller(): void {
 }
 
 function resetForm(): void {
-  stateStore.clear();
-  Object.assign(request, createDefaultRequest());
+  reset();
 }
 
 function onVehiclePaste(e: ClipboardEvent): void {
