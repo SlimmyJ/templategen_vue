@@ -1,315 +1,56 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from "vue";
-import { TemplateRenderer } from "./app/services/templateRenderer";
-import { ClipboardService } from "./app/services/clipboardService";
+import { ref } from "vue";
 import TopBar from "./app/components/TopBar.vue";
-import { InstallerStore, type InstallerRecord } from "./app/services/installerStore";
-import { TableImportService } from "./app/services/tableImportService";
+import { useVehicleImport } from "./app/composables/useVehicleImport";
 import { useInstallationRequest } from "./app/composables/useInstallationRequest";
 import { LocalInstallationRequestRepository } from "./app/repositories/local/LocalInstallationRequestRepository";
+import { useEmailPreview } from "./app/composables/useEmailPreview";
+import { useInstallerCatalog } from "./app/composables/useInstallerCatalog";
 
 type PreviewTab = "installer" | "customer";
 
-
-function slugifyId(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .split(" ")
-    .filter(Boolean)
-    .join("-")
-    .split("&")
-    .join("and");
-}
 const requestRepository = new LocalInstallationRequestRepository();
 const { request, reset } = useInstallationRequest(requestRepository);
-const tableImport = new TableImportService();
 
+const {
+  installers,
+  installerSearch,
+  installerOpen,
+  installerEdit,
+  selectedInstaller,
+  activeInstaller,
+  onInstallerPick,
+  pickExistingInstaller,
+  pickNewInstaller,
+  saveNewInstaller,
+  saveSelectedInstallerEdits,
+  deleteSelectedInstaller
+} = useInstallerCatalog(request);
 
-const installerStore = new InstallerStore();
-const installers = ref<InstallerRecord[]>([]);
-const installerSearch = ref<string>("");
-const installerOpen = ref<boolean>(false);
+const {
+  onVehiclePaste,
+  onVehicleFileSelected,
+  onVehicleDrop,
+  onVehicleDragOver,
+  addVehicle,
+  removeVehicle,
+  clearVehicleTable
+} = useVehicleImport(request);
+
+const {
+  status,
+  renderedInstaller,
+  renderedCustomer,
+  copyInstaller,
+  copyCustomer,
+  copyCalendar
+} = useEmailPreview(request, activeInstaller);
 
 const activeTab = ref<PreviewTab>("installer");
-
-const renderer = new TemplateRenderer();
-const clipboard = new ClipboardService();
-const status = ref<string>("");
-const renderedCalendar = computed(() => renderer.renderCalendarSnippet(request));
-
-
-
-installerStore.ensureSeed([
-  { id: "1", companyName: "Car&Truck Protection", contactPerson: "Dhr. Ronny Michiels", email: "ronny@ronny.be", gsm: "0476 45 75 75" },
-  { id: "2", companyName: "VDB Install", contactPerson: "Anja Goossens", email: "", gsm: "" },
-  { id: "3", companyName: "Desjokken BV", contactPerson: "Joris Van Gijseghem", email: "desjokken@gmail.com", gsm: "+32 473 37 52 95" },
-  { id: "4", companyName: "AudioJetcar", contactPerson: "Frederic Battheu", email: "", gsm: "" },
-  { id: "5", companyName: "VES", contactPerson: "Thomas Solomé", email: "", gsm: "" },
-  { id: "6", companyName: "Bruthi", contactPerson: "Dirk Bruyninx", email: "", gsm: "" },
-  { id: "7", companyName: "BR2", contactPerson: "Laurent Brasseur", email: "", gsm: "" },
-  { id: "8", companyName: "Car&Co", contactPerson: "Maarten Houben", email: "", gsm: "" },
-  { id: "9", companyName: "CJ Tracking", contactPerson: "Cindy Laussaunière", email: "", gsm: "" },
-  { id: "10", companyName: "Tracing.LU", contactPerson: "Alexandre Maniora", email: "", gsm: "" },
-  { id: "11", companyName: "Rietveld", contactPerson: "Ruud Stigter", email: "", gsm: "" },
-  { id: "12", companyName: "Javaco", contactPerson: "Niko Gijs", email: "", gsm: "" },
-]);
-
-function reloadInstallers(): void {
-  installers.value = installerStore.getAll().map((x) => ({
-    id: x.id,
-    companyName: x.companyName ?? "",
-    contactPerson: x.contactPerson ?? "",
-    email: x.email ?? "",
-    gsm: x.gsm ?? "",
-  }));
-}
-reloadInstallers();
-
-const selectedInstaller = computed<InstallerRecord | null>(() => {
-  const id = request.installerSelection.selectedId;
-  if (!id) return null;
-  return installers.value.find((x) => x.id === id) ?? null;
-});
-
-const installerEdit = reactive({
-  companyName: "",
-  contactPerson: "",
-  email: "",
-  gsm: "",
-});
-
-const activeInstaller = computed(() => {
-  if (request.installerSelection.mode === "new") return request.installerSelection.newInstaller;
-  if (selectedInstaller.value) return installerEdit;
-  return request.installerSelection.newInstaller;
-});
-
-const renderedInstaller = computed(() => renderer.renderInstallerEmail(request));
-const renderedCustomer = computed(() => renderer.renderCustomerEmail(request, activeInstaller.value));
-
-watch(
-  () => selectedInstaller.value,
-  (sel) => {
-    if (!sel) {
-      installerEdit.companyName = "";
-      installerEdit.contactPerson = "";
-      installerEdit.email = "";
-      installerEdit.gsm = "";
-      return;
-    }
-    installerEdit.companyName = sel.companyName;
-    installerEdit.contactPerson = sel.contactPerson;
-    installerEdit.email = sel.email;
-    installerEdit.gsm = sel.gsm;
-  },
-  { immediate: true }
-);
-
-function onInstallerPick(): void {
-  const value = installerSearch.value.trim();
-
-  if (value.length === 0) {
-    request.installerSelection.mode = "existing";
-    request.installerSelection.selectedId = "";
-    return;
-  }
-
-  if (value.toLowerCase() === "nieuwe installateur") {
-    request.installerSelection.mode = "new";
-    request.installerSelection.selectedId = "";
-    return;
-  }
-
-  const normalized = value.toLowerCase();
-
-  let match = installers.value.find((x) => x.companyName.trim().toLowerCase() === normalized) ?? null;
-
-  if (!match) match = installers.value.find((x) => x.companyName.trim().toLowerCase().startsWith(normalized)) ?? null;
-  if (!match) match = installers.value.find((x) => x.companyName.trim().toLowerCase().includes(normalized)) ?? null;
-
-  if (match) {
-    request.installerSelection.mode = "existing";
-    request.installerSelection.selectedId = match.id;
-    installerSearch.value = match.companyName;
-    return;
-  }
-
-  request.installerSelection.mode = "new";
-  request.installerSelection.selectedId = "";
-  request.installerSelection.newInstaller.companyName = value;
-}
-
-function pickExistingInstaller(id: string): void {
-  const ins = installers.value.find((x) => x.id === id);
-  if (!ins) return;
-
-  request.installerSelection.mode = "existing";
-  request.installerSelection.selectedId = ins.id;
-  installerSearch.value = ins.companyName;
-  installerOpen.value = false;
-}
-
-function pickNewInstaller(): void {
-  request.installerSelection.mode = "new";
-  request.installerSelection.selectedId = "";
-  installerOpen.value = false;
-}
-
-function saveNewInstaller(): void {
-  const n = request.installerSelection.newInstaller;
-  const companyName = n.companyName.trim();
-  if (companyName.length === 0) return;
-
-  const id = slugifyId(companyName);
-
-  const record: InstallerRecord = {
-    id,
-    companyName,
-    contactPerson: n.contactPerson.trim(),
-    email: n.email.trim(),
-    gsm: n.gsm.trim(),
-  };
-
-  installerStore.upsert(record);
-  reloadInstallers();
-
-  request.installerSelection.mode = "existing";
-  request.installerSelection.selectedId = record.id;
-  installerSearch.value = record.companyName;
-}
-
-function saveSelectedInstallerEdits(): void {
-  const sel = selectedInstaller.value;
-  if (!sel) return;
-
-  installerStore.upsert({
-    id: sel.id,
-    companyName: installerEdit.companyName.trim(),
-    contactPerson: installerEdit.contactPerson.trim(),
-    email: installerEdit.email.trim(),
-    gsm: installerEdit.gsm.trim(),
-  });
-
-  reloadInstallers();
-  installerSearch.value = installerEdit.companyName.trim();
-}
-
-function deleteSelectedInstaller(): void {
-  const sel = selectedInstaller.value;
-  if (!sel) return;
-
-  const name = sel.companyName.trim().length > 0 ? sel.companyName.trim() : "deze installateur";
-  const ok = window.confirm(`Bent u zeker dat u ${name} wil verwijderen?`);
-  if (!ok) return;
-
-  installerStore.remove(sel.id);
-  reloadInstallers();
-
-  request.installerSelection.mode = "existing";
-  request.installerSelection.selectedId = "";
-  installerSearch.value = "";
-}
 
 function resetForm(): void {
   reset();
 }
-
-function onVehiclePaste(e: ClipboardEvent): void {
-  e.preventDefault();
-
-  const html = e.clipboardData?.getData("text/html") ?? "";
-  const plain = e.clipboardData?.getData("text/plain") ?? "";
-
-  const parsed = tableImport.fromClipboard(html, plain);
-  request.vehicleTable.source = html.trim().length > 0 ? "html" : "text";
-  request.vehicleTable.html = parsed.html;
-  request.vehicleTable.plain = parsed.plain;
-
-  const target = e.target as HTMLElement | null;
-  if (target) target.innerHTML = "";
-}
-
-async function onVehicleFileSelected(e: Event): Promise<void> {
-  const input = e.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-
-  const text = await file.text();
-  const parsed = tableImport.fromCsvFileContent(text);
-
-  request.vehicleTable.source = "file";
-  request.vehicleTable.html = parsed.html;
-  request.vehicleTable.plain = parsed.plain;
-
-  input.value = "";
-}
-
-function onVehicleDrop(e: DragEvent): void {
-  e.preventDefault();
-  const file = e.dataTransfer?.files?.[0];
-  if (!file) return;
-
-  file.text().then((text) => {
-    const parsed = tableImport.fromCsvFileContent(text);
-    request.vehicleTable.source = "file";
-    request.vehicleTable.html = parsed.html;
-    request.vehicleTable.plain = parsed.plain;
-  });
-}
-
-function onVehicleDragOver(e: DragEvent): void {
-  e.preventDefault();
-}
-
-function addVehicle(): void {
-  request.vehicles.push({ brand: "", model: "", quantity: 1, licensePlate: "" });
-}
-
-function removeVehicle(index: number): void {
-  request.vehicles.splice(index, 1);
-}
-
-function clearVehicleTable(): void {
-  request.vehicleTable.source = "none";
-  request.vehicleTable.html = "";
-  request.vehicleTable.plain = "";
-}
-
-async function copyInstaller(): Promise<void> {
-  status.value = "";
-  try {
-    await clipboard.copyHtmlOnly(renderedInstaller.value.htmlBody);
-    status.value = "Installateur mail gekopieerd (HTML).";
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Onbekende fout";
-    status.value = `Kon niet kopieren: ${message}`;
-  }
-}
-
-async function copyCustomer(): Promise<void> {
-  status.value = "";
-  try {
-    await clipboard.copyHtmlOnly(renderedCustomer.value.htmlBody);
-    status.value = "Klant mail gekopieerd (HTML).";
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Onbekende fout";
-    status.value = `Kon niet kopieren: ${message}`;
-  }
-}
-
-async function copyCalendar(): Promise<void> {
-  status.value = "";
-  try {
-    await clipboard.copyHtmlOnly(renderedCalendar.value.htmlBody);
-    status.value = "Kalender snippet gekopieerd (HTML).";
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Onbekende fout";
-    status.value = `Kon niet kopieren: ${message}`;
-  }
-}
-
-
 
 </script>
 
@@ -415,7 +156,7 @@ async function copyCalendar(): Promise<void> {
               <div class="vehicle-add-spacer"></div>
             </div>
 
-           
+
           </div>
 
 
@@ -426,8 +167,8 @@ async function copyCalendar(): Promise<void> {
             </div>
           </div>
 
-           <label style="margin-top: 10px">Opmerking voertuigen</label>
-            <textarea class="textarea-compact" v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
+          <label style="margin-top: 10px">Opmerking voertuigen</label>
+          <textarea class="textarea-compact" v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
         </div>
         <div class="section">
           <div class="section-title">Installatieplaats</div>
@@ -603,6 +344,7 @@ async function copyCalendar(): Promise<void> {
             Reset
           </button>
         </div>
+        <div class="small">{{ status }}</div>
       </div>
     </div>
   </div>
