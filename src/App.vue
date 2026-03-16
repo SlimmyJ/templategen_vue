@@ -7,6 +7,19 @@ import { LocalInstallationRequestRepository } from "./app/repositories/local/Loc
 import { useEmailPreview } from "./app/composables/useEmailPreview";
 import { useInstallerCatalog } from "./app/composables/useInstallerCatalog";
 
+import LanguageSection from "./app/components/request/LanguageSection.vue";
+import IntroSection from "./app/components/request/IntroSection.vue";
+import PlanningSection from "./app/components/request/PlanningSection.vue";
+import InstallerSection from "./app/components/request/InstallerSection.vue";
+import InstallationDetailsSection from "./app/components/request/InstallationDetailsSection.vue";
+import VehicleSection from "./app/components/request/VehicleSection.vue";
+import LocationSection from "./app/components/request/LocationSection.vue";
+import ContactSection from "./app/components/request/ContactSection.vue";
+import EndingSection from "./app/components/request/EndingSection.vue";
+
+import PreviewPanel from "./app/components/preview/PreviewPanel.vue";
+
+
 type PreviewTab = "installer" | "customer";
 
 const requestRepository = new LocalInstallationRequestRepository();
@@ -69,283 +82,81 @@ function resetForm(): void {
 
     <div class="grid">
       <div class="card">
-        <div class="section">
-          <div class="section-title">Taal</div>
+        <LanguageSection v-model="request.language" />
 
-          <label>Kies taal</label>
-          <select v-model="request.language">
-            <option value="nl">Nederlands</option>
-            <option value="fr">Français</option>
-          </select>
-        </div>
+        <IntroSection :salutation-prefix="request.intro.salutationPrefix"
+          :salutation-name="request.intro.salutationName" :request-line="request.intro.requestLine"
+          @update:salutation-prefix="request.intro.salutationPrefix = $event"
+          @update:salutation-name="request.intro.salutationName = $event"
+          @update:request-line="request.intro.requestLine = $event" />
 
-        <div class="section">
-          <div class="section-title">Intro</div>
+        <PlanningSection :planned-date="request.planning.plannedDate" :planned-time="request.planning.plannedTime"
+          :planning-notes="request.notes.planningNotes" @update:planned-date="request.planning.plannedDate = $event"
+          @update:planned-time="request.planning.plannedTime = $event"
+          @update:planning-notes="request.notes.planningNotes = $event" />
 
-          <label>Aanspreking</label>
-          <div class="salutation-row">
-            <input class="salutation-prefix" v-model="request.intro.salutationPrefix" />
-            <input v-model="request.intro.salutationName" placeholder="Naam" />
-          </div>
+        <InstallationDetailsSection :details-text="request.installation.detailsText"
+          @update:details-text="request.installation.detailsText = $event" />
+        <VehicleSection :vehicle-table="request.vehicleTable" :vehicles="request.vehicles"
+          :vehicle-notes="request.notes.vehicleNotes" @update:vehicle-notes="request.notes.vehicleNotes = $event"
+          @paste="onVehiclePaste" @file-select="onVehicleFileSelected" @drop="onVehicleDrop"
+          @drag-over="onVehicleDragOver" @clear-table="clearVehicleTable" @add-vehicle="addVehicle"
+          @remove-vehicle="removeVehicle" />
 
-          <label style="margin-top: 10px">Intro</label>
-          <textarea class="textarea-compact muted-editable" v-model="request.intro.requestLine"></textarea>
-        </div>
-        <div class="section">
-          <div class="section-title">Datum installatie</div>
-
-          <div class="two">
-            <div>
-              <label>Datum</label>
-              <input type="date" v-model="request.planning.plannedDate" />
-              <div class="hint">Leeg = te bepalen met klant</div>
-            </div>
-            <div>
-              <label>Tijd</label>
-              <input type="time" v-model="request.planning.plannedTime" />
-              <div class="hint">Leeg = te bepalen met klant</div>
-            </div>
-          </div>
-          <label style="margin-top: 10px;">Opmerking datum installatie</label>
-          <textarea class="textarea-compact" v-model="request.notes.planningNotes" placeholder="Vrij veld"></textarea>
-
-        </div>
-        <div class="section">
-          <div class="section-title">Installatiegegevens</div>
-          <label>Details</label>
-          <textarea v-model="request.installation.detailsText"
-            placeholder="Bijvoorbeeld: 8 x FMC234 + extra info"></textarea>
-        </div>
-        <div class="section">
-          <div class="section-title">Voertuiggegevens</div>
-
-          <div class="dropzone" @drop="onVehicleDrop" @dragover="onVehicleDragOver">
-            <div class="dropzone-title">Tabel plakken of CSV droppen</div>
-            <div class="dropzone-sub">
-              Plak vanuit Excel of Outlook, of sleep een .csv
-              bestand
-            </div>
-
-            <div class="paste-area" contenteditable="true" @paste="onVehiclePaste"></div>
-
-            <div class="actions">
-              <input class="file-input" type="file" accept=".csv,text/csv" @change="onVehicleFileSelected" />
-              <button type="button" @click="clearVehicleTable">
-                Tabel wissen
-              </button>
-            </div>
-          </div>
-
-          <div v-if="request.vehicleTable.html.trim().length === 0" style="margin-top: 10px;">
-            <div class="hint" style="margin-bottom: 10px">
-              Geen tabel ingeplakt.
-            </div>
-
-            <div v-for="(v, index) in request.vehicles" :key="index" class="vehicle-row" style="margin-bottom: 10px">
-              <input v-model="v.brand" placeholder="Merk" />
-              <input v-model="v.model" placeholder="Model" />
-              <input type="number" min="1" v-model.number="v.quantity" />
-              <input v-model="v.licensePlate" placeholder="Kenteken" />
-              <button type="button" class="vehicle-remove" @click="removeVehicle(index)">X</button>
-            </div>
-
-            <div class="vehicle-row vehicle-add-row">
-              <button type="button" class="btn-add-vehicle" @click="addVehicle">
-                Voeg voertuig toe
-              </button>
-              <div class="vehicle-add-spacer"></div>
-            </div>
-
-
-          </div>
-
-
-
-          <div v-else style="margin-top: 10px">
-            <div class="hint">
-              Tabel is actief en wordt meegenomen in de preview en kopie.
-            </div>
-          </div>
-
-          <label style="margin-top: 10px">Opmerking voertuigen</label>
-          <textarea class="textarea-compact" v-model="request.notes.vehicleNotes" placeholder="Vrij veld"></textarea>
-        </div>
-        <div class="section">
-          <div class="section-title">Installatieplaats</div>
-
-          <label>Titel</label>
-          <input v-model="request.notes.installationPlaceLine" />
-
-          <div class="two" style="margin-top: 10px">
-            <div>
-              <label>Locatie</label>
-              <input v-model="request.location.name" placeholder="Total Energies Muide" />
-            </div>
-            <div>
-              <label>Straat</label>
-              <input v-model="request.location.street" placeholder="Goolestraat 2" />
-            </div>
-          </div>
-
-          <div class="two" style="margin-top: 10px">
-            <div style="margin-top: 10px">
-              <label>Postcode + Stad</label>
-              <input v-model="request.location.postalCity" placeholder="9000 Gent" />
-            </div>
-          </div>
-
-          <label style="margin-top: 10px">Opmerking installatieplaats</label>
-          <textarea class="textarea-compact" v-model="request.notes.installationPlaceNotes"
-            placeholder="Vrij veld"></textarea>
-        </div>
-        <div class="section">
-          <div class="section-title">Contactpersoon</div>
-
-          <div class="two">
-            <div>
-              <label>Naam</label>
-              <input v-model="request.contact.name" placeholder="Dhr. Van Der Vaert" />
-            </div>
-            <div>
-              <label>Tel</label>
-              <input v-model="request.contact.tel" placeholder="+32 9 335 61 35" />
-            </div>
-          </div>
-
-          <div class="two" style="margin-top: 10px">
-            <div>
-              <label>GSM</label>
-              <input v-model="request.contact.gsm" placeholder="+32 470 00 11 23" />
-            </div>
-            <div>
-              <label>Email</label>
-              <input v-model="request.contact.email" placeholder="naam@bedrijf.be" />
-            </div>
-          </div>
-        </div>
-        <div class="section">
-          <div class="section-title">Installateur</div>
-
-          <div class="installer-picker">
-            <label>Kies installateur</label>
-
-            <div class="picker-row">
-              <input v-model="installerSearch" placeholder="Zoek installateur..." @focus="installerOpen = true"
-                @input="installerOpen = true; onInstallerPick()" />
-              <button type="button" class="picker-btn" @click="installerOpen = !installerOpen">
-                ▼
-              </button>
-            </div>
-
-            <div v-if="installerOpen" class="picker-menu">
-              <button type="button" class="picker-item picker-new" @click="pickNewInstaller()">
-                Nieuwe installateur
-              </button>
-
-              <button v-for="ins in installers" :key="ins.id" type="button" class="picker-item"
-                @click="pickExistingInstaller(ins.id)">
-                {{ ins.companyName }}
-              </button>
-            </div>
-          </div>
-
-          <!-- NEW installer -->
-          <div v-if="request.installerSelection.mode === 'new'" style="margin-top: 10px;">
-            <label>Bedrijfsnaam</label>
-            <input v-model="request.installerSelection.newInstaller.companyName" />
-
-            <label style="margin-top: 10px;">Contactpersoon</label>
-            <input v-model="request.installerSelection.newInstaller.contactPerson" />
-
-            <label style="margin-top: 10px;">Email</label>
-            <input v-model="request.installerSelection.newInstaller.email" />
-
-            <label style="margin-top: 10px;">GSM</label>
-            <input v-model="request.installerSelection.newInstaller.gsm" />
-
-            <div class="actions">
-              <button type="button" @click="saveNewInstaller">Opslaan in lijst</button>
-            </div>
-          </div>
-
-          <!-- EXISTING installer -->
-          <div v-else style="margin-top: 10px;">
-            <div v-if="selectedInstaller">
-              <label>Bedrijfsnaam</label>
-              <input v-model="installerEdit.companyName" />
-
-              <label style="margin-top: 10px;">Contactpersoon</label>
-              <input v-model="installerEdit.contactPerson" />
-
-              <label style="margin-top: 10px;">Email</label>
-              <input v-model="installerEdit.email" />
-
-              <label style="margin-top: 10px;">GSM</label>
-              <input v-model="installerEdit.gsm" />
-
-              <div class="actions">
-                <button type="button" @click="saveSelectedInstallerEdits">Wijzigingen opslaan</button>
-                <button type="button" class="danger" @click="deleteSelectedInstaller">
-                  Verwijder installateur
-                </button>
-              </div>
-            </div>
-
-            <div v-else class="hint">
-              Geen installateur geselecteerd.
-            </div>
-          </div>
-        </div>
-        <div class="section">
-          <div class="section-title">Afsluiting</div>
-
-          <label>Bevestiging</label>
-          <textarea class="textarea-compact muted-editable" v-model="request.ending.confirmLine"></textarea>
-
-          <label style="margin-top: 10px">Dankzin</label>
-          <textarea class="textarea-compact muted-editable" v-model="request.ending.thanksLine"></textarea>
-        </div>
+        <LocationSection :installation-place-line="request.notes.installationPlaceLine"
+          :location-name="request.location.name" :street="request.location.street"
+          :postal-city="request.location.postalCity" :installation-place-notes="request.notes.installationPlaceNotes"
+          @update:installation-place-line="request.notes.installationPlaceLine = $event"
+          @update:location-name="request.location.name = $event" @update:street="request.location.street = $event"
+          @update:postal-city="request.location.postalCity = $event"
+          @update:installation-place-notes="request.notes.installationPlaceNotes = $event" />
+        <ContactSection :name="request.contact.name" :tel="request.contact.tel" :gsm="request.contact.gsm"
+          :email="request.contact.email" @update:name="request.contact.name = $event"
+          @update:tel="request.contact.tel = $event" @update:gsm="request.contact.gsm = $event"
+          @update:email="request.contact.email = $event" />
+  <InstallerSection
+  :installers="installers"
+  :installer-search="installerSearch"
+  :installer-open="installerOpen"
+  :mode="request.installerSelection.mode"
+  :selected-installer="selectedInstaller"
+  :new-installer="request.installerSelection.newInstaller"
+  :installer-edit="installerEdit"
+  @update:installer-search="installerSearch = $event"
+  @update:installer-open="installerOpen = $event"
+  @update:new-installer-company-name="request.installerSelection.newInstaller.companyName = $event"
+  @update:new-installer-contact-person="request.installerSelection.newInstaller.contactPerson = $event"
+  @update:new-installer-email="request.installerSelection.newInstaller.email = $event"
+  @update:new-installer-gsm="request.installerSelection.newInstaller.gsm = $event"
+  @update:installer-edit-company-name="installerEdit.companyName = $event"
+  @update:installer-edit-contact-person="installerEdit.contactPerson = $event"
+  @update:installer-edit-email="installerEdit.email = $event"
+  @update:installer-edit-gsm="installerEdit.gsm = $event"
+  @installer-pick="onInstallerPick"
+  @pick-existing-installer="pickExistingInstaller"
+  @pick-new-installer="pickNewInstaller"
+  @save-new-installer="saveNewInstaller"
+  @save-selected-installer-edits="saveSelectedInstallerEdits"
+  @delete-selected-installer="deleteSelectedInstaller"
+/>
+        <EndingSection :confirm-line="request.ending.confirmLine" :thanks-line="request.ending.thanksLine"
+          @update:confirm-line="request.ending.confirmLine = $event"
+          @update:thanks-line="request.ending.thanksLine = $event" />
       </div>
 
-      <div class="card">
-        <label>Preview</label>
-
-        <div class="tabbar">
-          <button type="button" :class="{ active: activeTab === 'installer' }" @click="activeTab = 'installer'">
-            Installateur
-          </button>
-          <button type="button" :class="{ active: activeTab === 'customer' }" @click="activeTab = 'customer'">
-            Klant
-          </button>
-        </div>
-
-        <div class="preview" v-html="activeTab === 'installer'
-          ? renderedInstaller.htmlBody
-          : renderedCustomer.htmlBody
-          "></div>
-
-        <div style="margin-top: 14px">
-          <label>Onderwerp</label>
-          <input :value="activeTab === 'installer'
-            ? renderedInstaller.subject
-            : renderedCustomer.subject
-            " readonly />
-        </div>
-
-        <div class="actions">
-          <button class="primary" type="button" @click="copyInstaller">
-            Copy installateur
-          </button>
-          <button type="button" @click="copyCustomer">Copy klant</button>
-          <button type="button" @click="copyCalendar">Copy kalender</button>
-
-          <div class="spacer"></div>
-          <button type="button" class="btn-reset" @click="resetForm">
-            Reset
-          </button>
-        </div>
-        <div class="small">{{ status }}</div>
-      </div>
+     <PreviewPanel
+  :active-tab="activeTab"
+  :installer-html="renderedInstaller.htmlBody"
+  :customer-html="renderedCustomer.htmlBody"
+  :installer-subject="renderedInstaller.subject"
+  :customer-subject="renderedCustomer.subject"
+  :status="status"
+  @update:active-tab="activeTab = $event"
+  @copy-installer="copyInstaller"
+  @copy-customer="copyCustomer"
+  @copy-calendar="copyCalendar"
+  @reset="resetForm"
+/>
     </div>
   </div>
 </template>
