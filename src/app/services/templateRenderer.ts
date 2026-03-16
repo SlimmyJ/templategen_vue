@@ -533,7 +533,7 @@ private buildInstallerCalendarHtml(r: InstallationRequest): string {
 
       tbdCustomer: fr ? "À convenir avec le client" : "Te bepalen met klant",
 
-      customerIntroPrefix: fr ? "Comme convenu par téléphone," : "Zoals telefonisch besproken",
+      customerIntroPrefix: fr ? "Comme convenu par téléphone," : "Zoals telefonisch besproken zal",
       customerWillContact: fr
         ? "vous contactera directement afin de fixer un rendez-vous pour l'installations suivantes :"
         : "u rechtstreeks contacteren voor het maken van een afspraak voor de volgende installatie:",
