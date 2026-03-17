@@ -3,6 +3,10 @@ import type { InstallationRequest, InstallerInfo } from "../models/installationM
 import { TemplateRenderer } from "../services/templateRenderer";
 import { ClipboardService } from "../services/clipboardService";
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Onbekende fout";
+}
+
 export function useEmailPreview(
   request: InstallationRequest,
   activeInstaller: { value: InstallerInfo }
@@ -12,40 +16,41 @@ export function useEmailPreview(
   const status = ref<string>("");
 
   const renderedInstaller = computed(() => renderer.renderInstallerEmail(request));
-  const renderedCustomer = computed(() => renderer.renderCustomerEmail(request, activeInstaller.value));
+  const renderedCustomer = computed(() =>
+    renderer.renderCustomerEmail(request, activeInstaller.value)
+  );
   const renderedCalendar = computed(() => renderer.renderCalendarSnippet(request));
 
-  async function copyInstaller(): Promise<void> {
+  async function copyHtmlWithStatus(html: string, successMessage: string): Promise<void> {
     status.value = "";
+
     try {
-      await clipboard.copyHtmlOnly(renderedInstaller.value.htmlBody);
-      status.value = "Installateur mail gekopieerd (HTML).";
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Onbekende fout";
-      status.value = `Kon niet kopieren: ${message}`;
+      await clipboard.copyHtmlOnly(html);
+      status.value = successMessage;
+    } catch (error) {
+      status.value = `Kon niet kopieren: ${getErrorMessage(error)}`;
     }
+  }
+
+  async function copyInstaller(): Promise<void> {
+    await copyHtmlWithStatus(
+      renderedInstaller.value.htmlBody,
+      "Installateur mail gekopieerd (HTML)."
+    );
   }
 
   async function copyCustomer(): Promise<void> {
-    status.value = "";
-    try {
-      await clipboard.copyHtmlOnly(renderedCustomer.value.htmlBody);
-      status.value = "Klant mail gekopieerd (HTML).";
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Onbekende fout";
-      status.value = `Kon niet kopieren: ${message}`;
-    }
+    await copyHtmlWithStatus(
+      renderedCustomer.value.htmlBody,
+      "Klant mail gekopieerd (HTML)."
+    );
   }
 
   async function copyCalendar(): Promise<void> {
-    status.value = "";
-    try {
-      await clipboard.copyHtmlOnly(renderedCalendar.value.htmlBody);
-      status.value = "Kalender snippet gekopieerd (HTML).";
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Onbekende fout";
-      status.value = `Kon niet kopieren: ${message}`;
-    }
+    await copyHtmlWithStatus(
+      renderedCalendar.value.htmlBody,
+      "Kalender snippet gekopieerd (HTML)."
+    );
   }
 
   return {
@@ -55,6 +60,6 @@ export function useEmailPreview(
     renderedCalendar,
     copyInstaller,
     copyCustomer,
-    copyCalendar,
+    copyCalendar
   };
 }

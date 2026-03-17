@@ -1,12 +1,15 @@
 <script setup lang="ts">
   import { ref } from "vue";
-  import TopBar from "./app/components/TopBar.vue";
-  import { useVehicleImport } from "./app/composables/useVehicleImport";
-  import { useInstallationRequest } from "./app/composables/useInstallationRequest";
   import { LocalInstallationRequestRepository } from "./app/repositories/local/LocalInstallationRequestRepository";
+
+  import type { InstallerInfo } from "./app/models/installationModels";
+  
+  import { useVehicleImport } from "./app/composables/useVehicleImport";
+  import { useInstallationRequest } from "./app/composables/useInstallationRequest";  
   import { useEmailPreview } from "./app/composables/useEmailPreview";
   import { useInstallerCatalog } from "./app/composables/useInstallerCatalog";
 
+  import TopBar from "./app/components/TopBar.vue";
   import LanguageSection from "./app/components/request/LanguageSection.vue";
   import IntroSection from "./app/components/request/IntroSection.vue";
   import PlanningSection from "./app/components/request/PlanningSection.vue";
@@ -16,8 +19,9 @@
   import LocationSection from "./app/components/request/LocationSection.vue";
   import ContactSection from "./app/components/request/ContactSection.vue";
   import EndingSection from "./app/components/request/EndingSection.vue";
-
   import PreviewPanel from "./app/components/preview/PreviewPanel.vue";
+
+
 
   type PreviewTab = "installer" | "customer";
 
@@ -69,6 +73,17 @@
   }): void {
     installerSearch.value = picker.search;
     installerOpen.value = picker.open;
+  }
+
+  function updateNewInstaller(value: InstallerInfo): void {
+    request.installerSelection.newInstaller = value;
+  }
+
+  function updateInstallerEdit(value: InstallerInfo): void {
+    installerEdit.companyName = value.companyName;
+    installerEdit.contactPerson = value.contactPerson;
+    installerEdit.email = value.email;
+    installerEdit.gsm = value.gsm;
   }
 </script>
 
@@ -124,15 +139,8 @@
           :new-installer="request.installerSelection.newInstaller"
           :installer-edit="installerEdit"
           @update:picker="updateInstallerPicker"
-          @update:new-installer="
-            request.installerSelection.newInstaller = $event
-          "
-          @update:installer-edit="
-            installerEdit.companyName = $event.companyName;
-            installerEdit.contactPerson = $event.contactPerson;
-            installerEdit.email = $event.email;
-            installerEdit.gsm = $event.gsm;
-          "
+          @update:new-installer="updateNewInstaller"
+          @update:installer-edit="updateInstallerEdit"
           @pick-existing-installer="pickExistingInstaller"
           @pick-new-installer="pickNewInstaller"
           @save-new-installer="saveNewInstaller"

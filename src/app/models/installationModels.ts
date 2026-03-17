@@ -1,3 +1,23 @@
+import type {
+  AddressInfo,
+  AppLanguage,
+  CompanyInfo,
+  ContactChannels,
+  InstallerMode,
+  PersonNameInfo,
+  VehicleTableSource
+} from "./sharedModels";
+
+export type {
+  AddressInfo,
+  AppLanguage,
+  CompanyInfo,
+  ContactChannels,
+  InstallerMode,
+  PersonNameInfo,
+  VehicleTableSource
+} from "./sharedModels";
+
 export type VehicleLine = {
   brand: string;
   model: string;
@@ -6,7 +26,7 @@ export type VehicleLine = {
 };
 
 export type VehicleTable = {
-  source: "none" | "html" | "text" | "file";
+  source: VehicleTableSource;
   html: string;
   plain: string;
 };
@@ -20,18 +40,11 @@ export type InstallationDetails = {
   detailsText: string;
 };
 
-export type LocationInfo = {
+export type LocationInfo = AddressInfo & {
   name: string;
-  street: string;
-  postalCity: string;
 };
 
-export type ContactInfo = {
-  name: string;
-  tel: string;
-  gsm: string;
-  email: string;
-};
+export type ContactInfo = PersonNameInfo & ContactChannels;
 
 export type IntroText = {
   salutationPrefix: string;
@@ -51,15 +64,14 @@ export type NotesInfo = {
   installationPlaceNotes: string;
 };
 
-export type InstallerInfo = {
-  companyName: string;
+export type InstallerInfo = CompanyInfo & {
   contactPerson: string;
   email: string;
   gsm: string;
 };
 
 export type InstallerSelection = {
-  mode: "existing" | "new";
+  mode: InstallerMode;
   selectedId: string;
   newInstaller: InstallerInfo;
 };
@@ -74,8 +86,13 @@ export type CustomerEmailData = {
   intro: CustomerIntroText;
 };
 
+export type BrandingInfo = {
+  senderName: string;
+  brandPrimaryColorHex: string;
+};
+
 export type InstallationRequest = {
-  language: "nl" | "fr";
+  language: AppLanguage;
   intro: IntroText;
   planning: PlanningInfo;
   installation: InstallationDetails;
@@ -91,84 +108,128 @@ export type InstallationRequest = {
   installerSelection: InstallerSelection;
 };
 
-export function createDefaultRequest(): InstallationRequest {
+export function createDefaultInstallerInfo(): InstallerInfo {
   return {
-    language: "nl",
-    senderName: "Sven Paelman",
-    brandPrimaryColorHex: "#C20E1A",
+    companyName: "",
+    contactPerson: "",
+    email: "",
+    gsm: ""
+  };
+}
 
+export function createDefaultVehicleLine(): VehicleLine {
+  return {
+    brand: "",
+    model: "",
+    quantity: 1,
+    licensePlate: ""
+  };
+}
+
+export function createDefaultVehicleTable(): VehicleTable {
+  return {
+    source: "none",
+    html: "",
+    plain: ""
+  };
+}
+
+export function createDefaultPlanningInfo(): PlanningInfo {
+  return {
+    plannedDate: "",
+    plannedTime: ""
+  };
+}
+
+export function createDefaultInstallationDetails(): InstallationDetails {
+  return {
+    detailsText: "8 x FMC234"
+  };
+}
+
+export function createDefaultLocationInfo(): LocationInfo {
+  return {
+    name: "",
+    street: "",
+    postalCity: ""
+  };
+}
+
+export function createDefaultContactInfo(): ContactInfo {
+  return {
+    name: "",
+    tel: "",
+    gsm: "",
+    email: ""
+  };
+}
+
+export function createDefaultNotesInfo(): NotesInfo {
+  return {
+    vehicleNotes: "",
+    planningNotes: "",
+    installationPlaceLine: "Installatieplaats: te verifiëren met klant",
+    installationPlaceNotes: ""
+  };
+}
+
+export function createDefaultIntroText(): IntroText {
+  return {
+    salutationPrefix: "Beste",
+    salutationName: "",
+    requestLine: "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen."
+  };
+}
+
+export function createDefaultEndingText(): EndingText {
+  return {
+    confirmLine: "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.",
+    thanksLine: "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht."
+  };
+}
+
+export function createDefaultCustomerEmailData(): CustomerEmailData {
+  return {
+    salesOrderDescription: "",
     intro: {
       salutationPrefix: "Beste",
-      salutationName: "",
-      requestLine: "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen."
-    },
-
-    planning: {
-      plannedDate: "",
-      plannedTime: ""
-    },
-
-    installation: {
-      detailsText: "8 x FMC234"
-    },
-
-    vehicles: [
-      {
-        brand: "",
-        model: "",
-        quantity: 1,
-        licensePlate: ""
-      }
-    ],
-
-    vehicleTable: {
-      source: "none",
-      html: "",
-      plain: ""
-    },
-
-    location: {
-      name: "",
-      street: "",
-      postalCity: ""
-    },
-
-    contact: {
-      name: "",
-      tel: "",
-      gsm: "",
-      email: ""
-    },
-
-    notes: {
-      vehicleNotes: "",
-      planningNotes: "",
-      installationPlaceLine: "Installatieplaats: te verifiëren met klant",
-      installationPlaceNotes: ""
-    },
-
-    ending: {
-      confirmLine: "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.",
-      thanksLine: "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht."
-    },
-
-    customerEmail: {
-      salesOrderDescription: "",
-      intro: {
-        salutationPrefix: "Beste",
-        salutationName: ""
-      }
-    },
-
-    installerSelection: {
-      mode: "existing",
-      selectedId: "",
-      newInstaller: {
-        companyName: "",
-        contactPerson: "",
-        email: "",
-        gsm: ""
-      }
+      salutationName: ""
     }
+  };
+}
+
+export function createDefaultInstallerSelection(): InstallerSelection {
+  return {
+    mode: "existing",
+    selectedId: "",
+    newInstaller: createDefaultInstallerInfo()
+  };
+}
+
+export function createDefaultBrandingInfo(): BrandingInfo {
+  return {
+    senderName: "Sven Paelman",
+    brandPrimaryColorHex: "#C20E1A"
+  };
+}
+
+export function createDefaultRequest(): InstallationRequest {
+  const branding = createDefaultBrandingInfo();
+
+  return {
+    language: "nl",
+    senderName: branding.senderName,
+    brandPrimaryColorHex: branding.brandPrimaryColorHex,
+    intro: createDefaultIntroText(),
+    planning: createDefaultPlanningInfo(),
+    installation: createDefaultInstallationDetails(),
+    vehicles: [createDefaultVehicleLine()],
+    vehicleTable: createDefaultVehicleTable(),
+    location: createDefaultLocationInfo(),
+    contact: createDefaultContactInfo(),
+    notes: createDefaultNotesInfo(),
+    ending: createDefaultEndingText(),
+    customerEmail: createDefaultCustomerEmailData(),
+    installerSelection: createDefaultInstallerSelection()
   };
 }

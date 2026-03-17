@@ -1,65 +1,91 @@
 import { TableImportService } from "../services/tableImportService";
-import type { InstallationRequest } from "../models/installationModels";
+import type {
+  InstallationRequest,
+  VehicleLine,
+  VehicleTableSource
+} from "../models/installationModels";
+
+function createEmptyVehicleLine(): VehicleLine {
+  return {
+    brand: "",
+    model: "",
+    quantity: 1,
+    licensePlate: ""
+  };
+}
 
 export function useVehicleImport(request: InstallationRequest) {
   const tableImport = new TableImportService();
 
-  function onVehiclePaste(e: ClipboardEvent): void {
-    e.preventDefault();
+  function applyVehicleTable(
+    source: VehicleTableSource,
+    html: string,
+    plain: string
+  ): void {
+    request.vehicleTable.source = source;
+    request.vehicleTable.html = html;
+    request.vehicleTable.plain = plain;
+  }
 
-    const html = e.clipboardData?.getData("text/html") ?? "";
-    const plain = e.clipboardData?.getData("text/plain") ?? "";
-
-    const parsed = tableImport.fromClipboard(html, plain);
-    request.vehicleTable.source = html.trim().length > 0 ? "html" : "text";
-    request.vehicleTable.html = parsed.html;
-    request.vehicleTable.plain = parsed.plain;
-
-    const target = e.target as HTMLElement | null;
-    if (target) {
-      target.innerHTML = "";
+  function clearPasteTarget(target: EventTarget | null): void {
+    const element = target as HTMLElement | null;
+    if (element) {
+      element.innerHTML = "";
     }
   }
 
-  async function onVehicleFileSelected(e: Event): Promise<void> {
-    const input = e.target as HTMLInputElement;
+  function importFromClipboard(html: string, plain: string): void {
+    const parsed = tableImport.fromClipboard(html, plain);
+    const source: VehicleTableSource = html.trim().length > 0 ? "html" : "text";
+    applyVehicleTable(source, parsed.html, parsed.plain);
+  }
+
+  function importFromCsvText(text: string): void {
+    const parsed = tableImport.fromCsvFileContent(text);
+    applyVehicleTable("file", parsed.html, parsed.plain);
+  }
+
+  function onVehiclePaste(event: ClipboardEvent): void {
+    event.preventDefault();
+
+    const html = event.clipboardData?.getData("text/html") ?? "";
+    const plain = event.clipboardData?.getData("text/plain") ?? "";
+
+    importFromClipboard(html, plain);
+    clearPasteTarget(event.target);
+  }
+
+  async function onVehicleFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+
+    if (!file) {
+      return;
+    }
 
     const text = await file.text();
-    const parsed = tableImport.fromCsvFileContent(text);
-
-    request.vehicleTable.source = "file";
-    request.vehicleTable.html = parsed.html;
-    request.vehicleTable.plain = parsed.plain;
+    importFromCsvText(text);
 
     input.value = "";
   }
 
-  function onVehicleDrop(e: DragEvent): void {
-    e.preventDefault();
-    const file = e.dataTransfer?.files?.[0];
-    if (!file) return;
+  function onVehicleDrop(event: DragEvent): void {
+    event.preventDefault();
 
-    file.text().then((text) => {
-      const parsed = tableImport.fromCsvFileContent(text);
-      request.vehicleTable.source = "file";
-      request.vehicleTable.html = parsed.html;
-      request.vehicleTable.plain = parsed.plain;
-    });
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    file.text().then(importFromCsvText);
   }
 
-  function onVehicleDragOver(e: DragEvent): void {
-    e.preventDefault();
+  function onVehicleDragOver(event: DragEvent): void {
+    event.preventDefault();
   }
 
   function addVehicle(): void {
-    request.vehicles.push({
-      brand: "",
-      model: "",
-      quantity: 1,
-      licensePlate: "",
-    });
+    request.vehicles.push(createEmptyVehicleLine());
   }
 
   function removeVehicle(index: number): void {
@@ -67,9 +93,7 @@ export function useVehicleImport(request: InstallationRequest) {
   }
 
   function clearVehicleTable(): void {
-    request.vehicleTable.source = "none";
-    request.vehicleTable.html = "";
-    request.vehicleTable.plain = "";
+    applyVehicleTable("none", "", "");
   }
 
   return {
@@ -79,6 +103,6 @@ export function useVehicleImport(request: InstallationRequest) {
     onVehicleDragOver,
     addVehicle,
     removeVehicle,
-    clearVehicleTable,
+    clearVehicleTable
   };
 }

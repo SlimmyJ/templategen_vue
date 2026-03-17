@@ -13,6 +13,16 @@ type LangDefaults = {
   customerPrefix: string;
 };
 
+type AutoTextSnapshot = {
+  language: Lang;
+  introLine: string;
+  confirmLine: string;
+  thanksLine: string;
+  placeLine: string;
+  introPrefix: string;
+  customerPrefix: string;
+};
+
 const defaultsByLang: Record<Lang, LangDefaults> = {
   nl: {
     introPrefix: "Beste",
@@ -32,100 +42,123 @@ const defaultsByLang: Record<Lang, LangDefaults> = {
   }
 };
 
+function normalizeText(value: string): string {
+  return (value ?? "").trim();
+}
+
 function setIfUnchanged(
   current: string,
   previousAuto: string,
   nextAuto: string,
   setter: (value: string) => void
 ): void {
-  const currentValue = (current ?? "").trim();
-  const previousValue = (previousAuto ?? "").trim();
+  const currentValue = normalizeText(current);
+  const previousValue = normalizeText(previousAuto);
 
   if (currentValue.length === 0 || currentValue === previousValue) {
     setter(nextAuto);
   }
 }
 
-export function useInstallationRequest(repository: IInstallationRequestRepository) {
-  const request = reactive<InstallationRequest>(repository.loadDraft() ?? createDefaultRequest());
-
-  const lastAuto = reactive({
-    language: request.language as Lang,
+function createEmptyAutoTextSnapshot(language: Lang): AutoTextSnapshot {
+  return {
+    language,
     introLine: "",
     confirmLine: "",
     thanksLine: "",
     placeLine: "",
     introPrefix: "",
     customerPrefix: ""
-  });
+  };
+}
 
-  function initLastAutoFromCurrent(lang: Lang): void {
+export function useInstallationRequest(repository: IInstallationRequestRepository) {
+  const request = reactive<InstallationRequest>(repository.loadDraft() ?? createDefaultRequest());
+  const lastAuto = reactive<AutoTextSnapshot>(
+    createEmptyAutoTextSnapshot(request.language as Lang)
+  );
+
+  function applyLanguageDefaults(lang: Lang): void {
+    const nextDefaults = defaultsByLang[lang];
+
+    setIfUnchanged(request.intro.salutationPrefix, lastAuto.introPrefix, nextDefaults.introPrefix, (value) => {
+      request.intro.salutationPrefix = value;
+    });
+
+    setIfUnchanged(
+      request.customerEmail.intro.salutationPrefix,
+      lastAuto.customerPrefix,
+      nextDefaults.customerPrefix,
+      (value) => {
+        request.customerEmail.intro.salutationPrefix = value;
+      }
+    );
+
+    setIfUnchanged(request.intro.requestLine, lastAuto.introLine, nextDefaults.introLine, (value) => {
+      request.intro.requestLine = value;
+    });
+
+    setIfUnchanged(request.ending.confirmLine, lastAuto.confirmLine, nextDefaults.confirmLine, (value) => {
+      request.ending.confirmLine = value;
+    });
+
+    setIfUnchanged(request.ending.thanksLine, lastAuto.thanksLine, nextDefaults.thanksLine, (value) => {
+      request.ending.thanksLine = value;
+    });
+
+    setIfUnchanged(request.notes.installationPlaceLine, lastAuto.placeLine, nextDefaults.placeLine, (value) => {
+      request.notes.installationPlaceLine = value;
+    });
+  }
+
+  function syncLastAutoFromRequest(lang: Lang): void {
     const defaults = defaultsByLang[lang];
 
     lastAuto.language = lang;
     lastAuto.introLine =
-      request.intro.requestLine.trim().length === 0 ? defaults.introLine : request.intro.requestLine.trim();
+      normalizeText(request.intro.requestLine).length === 0
+        ? defaults.introLine
+        : normalizeText(request.intro.requestLine);
+
     lastAuto.confirmLine =
-      request.ending.confirmLine.trim().length === 0 ? defaults.confirmLine : request.ending.confirmLine.trim();
+      normalizeText(request.ending.confirmLine).length === 0
+        ? defaults.confirmLine
+        : normalizeText(request.ending.confirmLine);
+
     lastAuto.thanksLine =
-      request.ending.thanksLine.trim().length === 0 ? defaults.thanksLine : request.ending.thanksLine.trim();
+      normalizeText(request.ending.thanksLine).length === 0
+        ? defaults.thanksLine
+        : normalizeText(request.ending.thanksLine);
+
     lastAuto.placeLine =
-      request.notes.installationPlaceLine.trim().length === 0
+      normalizeText(request.notes.installationPlaceLine).length === 0
         ? defaults.placeLine
-        : request.notes.installationPlaceLine.trim();
+        : normalizeText(request.notes.installationPlaceLine);
+
     lastAuto.introPrefix =
-      request.intro.salutationPrefix.trim().length === 0
+      normalizeText(request.intro.salutationPrefix).length === 0
         ? defaults.introPrefix
-        : request.intro.salutationPrefix.trim();
+        : normalizeText(request.intro.salutationPrefix);
+
     lastAuto.customerPrefix =
-      request.customerEmail.intro.salutationPrefix.trim().length === 0
+      normalizeText(request.customerEmail.intro.salutationPrefix).length === 0
         ? defaults.customerPrefix
-        : request.customerEmail.intro.salutationPrefix.trim();
+        : normalizeText(request.customerEmail.intro.salutationPrefix);
   }
 
-  initLastAutoFromCurrent(request.language as Lang);
+  function reset(): void {
+    repository.clearDraft();
+    Object.assign(request, createDefaultRequest());
+    syncLastAutoFromRequest(request.language as Lang);
+  }
+
+  syncLastAutoFromRequest(request.language as Lang);
 
   watch(
     () => request.language as Lang,
     (lang) => {
-      const next = defaultsByLang[lang];
-
-      setIfUnchanged(request.intro.salutationPrefix, lastAuto.introPrefix, next.introPrefix, (value) => {
-        request.intro.salutationPrefix = value;
-      });
-
-      setIfUnchanged(
-        request.customerEmail.intro.salutationPrefix,
-        lastAuto.customerPrefix,
-        next.customerPrefix,
-        (value) => {
-          request.customerEmail.intro.salutationPrefix = value;
-        }
-      );
-
-      setIfUnchanged(request.intro.requestLine, lastAuto.introLine, next.introLine, (value) => {
-        request.intro.requestLine = value;
-      });
-
-      setIfUnchanged(request.ending.confirmLine, lastAuto.confirmLine, next.confirmLine, (value) => {
-        request.ending.confirmLine = value;
-      });
-
-      setIfUnchanged(request.ending.thanksLine, lastAuto.thanksLine, next.thanksLine, (value) => {
-        request.ending.thanksLine = value;
-      });
-
-      setIfUnchanged(request.notes.installationPlaceLine, lastAuto.placeLine, next.placeLine, (value) => {
-        request.notes.installationPlaceLine = value;
-      });
-
-      lastAuto.language = lang;
-      lastAuto.introPrefix = request.intro.salutationPrefix.trim();
-      lastAuto.customerPrefix = request.customerEmail.intro.salutationPrefix.trim();
-      lastAuto.introLine = request.intro.requestLine.trim();
-      lastAuto.confirmLine = request.ending.confirmLine.trim();
-      lastAuto.thanksLine = request.ending.thanksLine.trim();
-      lastAuto.placeLine = request.notes.installationPlaceLine.trim();
+      applyLanguageDefaults(lang);
+      syncLastAutoFromRequest(lang);
     },
     { immediate: true }
   );
@@ -137,12 +170,6 @@ export function useInstallationRequest(repository: IInstallationRequestRepositor
     },
     { deep: true }
   );
-
-  function reset(): void {
-    repository.clearDraft();
-    Object.assign(request, createDefaultRequest());
-    initLastAutoFromCurrent(request.language as Lang);
-  }
 
   return {
     request,
