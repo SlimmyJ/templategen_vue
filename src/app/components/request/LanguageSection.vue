@@ -1,13 +1,13 @@
 <script setup lang="ts">
-type Language = "nl" | "fr";
+  type Language = "nl" | "fr";
 
-defineProps<{
-  modelValue: Language;
-}>();
+  defineProps<{
+    modelValue: Language;
+  }>();
 
-defineEmits<{
-  "update:modelValue": [value: Language];
-}>();
+  defineEmits<{
+    "update:modelValue": [value: Language];
+  }>();
 </script>
 
 <template>
@@ -18,8 +18,12 @@ defineEmits<{
     <select
       id="language-select"
       :value="modelValue"
-      @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value as Language)"
-    >
+      @change="
+        $emit(
+          'update:modelValue',
+          ($event.target as HTMLSelectElement).value as Language,
+        )
+      ">
       <option value="nl">Nederlands</option>
       <option value="fr">Français</option>
     </select>

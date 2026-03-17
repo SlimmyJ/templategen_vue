@@ -30,34 +30,34 @@ export class TemplateRenderer implements ITemplateRenderer {
   }
 
   public renderCalendarSnippet(request: InstallationRequest): TemplateResult {
-  return {
-    subject: "",
-    htmlBody: this.buildInstallerCalendarHtml(request),
-  };
-}
+    return {
+      subject: "",
+      htmlBody: this.buildInstallerCalendarHtml(request),
+    };
+  }
 
 
 
 
-private subjectSafe(value: string): string {
-  return value.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
-}
+  private subjectSafe(value: string): string {
+    return value.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  }
 
-private buildInstallerSubject(r: InstallationRequest): string {
-  const details = this.subjectSafe(r.installation.detailsText);
-  const city = this.subjectSafe(r.location.postalCity);
+  private buildInstallerSubject(r: InstallationRequest): string {
+    const details = this.subjectSafe(r.installation.detailsText);
+    const city = this.subjectSafe(r.location.postalCity);
 
-  const left = details.length > 0 ? details : "Installatie";
-  const right = city.length > 0 ? city : "";
+    const left = details.length > 0 ? details : "Installatie";
+    const right = city.length > 0 ? city : "";
 
-  return `Installatie inplannen - ${left}${right.length > 0 ? " - " + right : ""}`.trim();
-}
+    return `Installatie inplannen - ${left}${right.length > 0 ? " - " + right : ""}`.trim();
+  }
 
-private buildCustomerSubject(r: InstallationRequest): string {
-  const desc = this.subjectSafe(r.customerEmail.salesOrderDescription);
-  const value = desc.length > 0 ? desc : "installatie";
-  return `Planning ${value}`.trim();
-}
+  private buildCustomerSubject(r: InstallationRequest): string {
+    const desc = this.subjectSafe(r.customerEmail.salesOrderDescription);
+    const value = desc.length > 0 ? desc : "installatie";
+    return `Planning ${value}`.trim();
+  }
 
   private buildInstallerHtml(r: InstallationRequest): string {
     const tr = this.t(r.language);
@@ -145,91 +145,91 @@ private buildCustomerSubject(r: InstallationRequest): string {
     return html.join("").trim();
   }
 
-private buildInstallerCalendarHtml(r: InstallationRequest): string {
-  const tr = this.t(r.language);
-  const color = this.getBrandColor(r);
+  private buildInstallerCalendarHtml(r: InstallationRequest): string {
+    const tr = this.t(r.language);
+    const color = this.getBrandColor(r);
 
-  const placeTitle =
-    r.notes.installationPlaceLine.trim().length > 0
-      ? r.notes.installationPlaceLine.trim()
-      : tr.installPlace;
+    const placeTitle =
+      r.notes.installationPlaceLine.trim().length > 0
+        ? r.notes.installationPlaceLine.trim()
+        : tr.installPlace;
 
-  const html: string[] = [];
+    const html: string[] = [];
 
-  const planningNotes = r.notes.planningNotes.trim();
-  const detailsText = r.installation.detailsText.trim();
-  const vehicleNotes = r.notes.vehicleNotes.trim();
-  const placeNotes = r.notes.installationPlaceNotes.trim();
+    const planningNotes = r.notes.planningNotes.trim();
+    const detailsText = r.installation.detailsText.trim();
+    const vehicleNotes = r.notes.vehicleNotes.trim();
+    const placeNotes = r.notes.installationPlaceNotes.trim();
 
-  html.push(this.wrapperStart());
+    html.push(this.wrapperStart());
 
-  // DATE/TIME
-  html.push(this.sectionTitle(tr.dateInstall, color));
-  html.push(`<ul style="margin-top: 6px;">`);
-  html.push(`<li><strong>${this.e(tr.date)}:</strong> ${this.e(this.formatDate(r, tr))}</li>`);
-  html.push(`<li><strong>${this.e(tr.time)}:</strong> ${this.e(this.formatTime(r, tr))}</li>`);
-  html.push(`</ul>`);
+    // DATE/TIME
+    html.push(this.sectionTitle(tr.dateInstall, color));
+    html.push(`<ul style="margin-top: 6px;">`);
+    html.push(`<li><strong>${this.e(tr.date)}:</strong> ${this.e(this.formatDate(r, tr))}</li>`);
+    html.push(`<li><strong>${this.e(tr.time)}:</strong> ${this.e(this.formatTime(r, tr))}</li>`);
+    html.push(`</ul>`);
 
-  if (planningNotes.length > 0) {
-    html.push(
-      `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(planningNotes, true)}</div>`
-    );
+    if (planningNotes.length > 0) {
+      html.push(
+        `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(planningNotes, true)}</div>`
+      );
+    }
+
+    html.push(`<br>`);
+
+    // INSTALLATION DETAILS
+    html.push(this.sectionTitle(tr.installationDetails, color));
+    if (detailsText.length > 0) {
+      html.push(`<div style="margin-top: 6px;">${this.e(detailsText, true)}</div>`);
+    }
+    html.push(`<br>`);
+
+    // VEHICLES
+    html.push(this.sectionTitle(tr.vehicleDetails, color));
+    html.push(this.buildVehicleHtml(r, tr));
+
+    if (vehicleNotes.length > 0) {
+      html.push(
+        `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(vehicleNotes, true)}</div>`
+      );
+    }
+    html.push(`<br>`);
+
+    // LOCATION
+    html.push(this.sectionTitle(placeTitle, color));
+    html.push(`<div style="margin-top: 6px;">`);
+    html.push(`<div><strong>${this.e(tr.location)}:</strong> ${this.e(r.location.name)}</div>`);
+    html.push(`<div>${this.e(r.location.street)}</div>`);
+    html.push(`<div>${this.e(r.location.postalCity.trim())}</div>`);
+    html.push(`</div>`);
+
+    if (placeNotes.length > 0) {
+      html.push(
+        `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(placeNotes, true)}</div>`
+      );
+    }
+
+    html.push(`<br>`);
+
+    // CONTACT
+    html.push(this.sectionTitle(tr.contact, color));
+    html.push(`<div style="margin-top: 6px;">`);
+    html.push(`<div><strong>${this.e(tr.name)}:</strong> ${this.e(r.contact.name)}</div>`);
+
+    const tel = r.contact.tel.trim();
+    const gsm = r.contact.gsm.trim();
+    const email = r.contact.email.trim();
+
+    if (tel.length > 0) html.push(`<div><strong>${this.e(tr.tel)}:</strong> ${this.e(tel)}</div>`);
+    if (gsm.length > 0) html.push(`<div><strong>${this.e(tr.gsm)}:</strong> ${this.e(gsm)}</div>`);
+    if (email.length > 0) html.push(`<div><strong>${this.e(tr.email)}:</strong> ${this.e(email)}</div>`);
+
+    html.push(`</div>`);
+
+    html.push(this.wrapperEnd());
+    return html.join("").trim();
   }
-
-  html.push(`<br>`);
-
-  // INSTALLATION DETAILS
-  html.push(this.sectionTitle(tr.installationDetails, color));
-  if (detailsText.length > 0) {
-    html.push(`<div style="margin-top: 6px;">${this.e(detailsText, true)}</div>`);
-  }
-  html.push(`<br>`);
-
-  // VEHICLES
-  html.push(this.sectionTitle(tr.vehicleDetails, color));
-  html.push(this.buildVehicleHtml(r, tr));
-
-  if (vehicleNotes.length > 0) {
-    html.push(
-      `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(vehicleNotes, true)}</div>`
-    );
-  }
-  html.push(`<br>`);
-
-  // LOCATION
-  html.push(this.sectionTitle(placeTitle, color));
-  html.push(`<div style="margin-top: 6px;">`);
-  html.push(`<div><strong>${this.e(tr.location)}:</strong> ${this.e(r.location.name)}</div>`);
-  html.push(`<div>${this.e(r.location.street)}</div>`);
-  html.push(`<div>${this.e(r.location.postalCity.trim())}</div>`);
-  html.push(`</div>`);
-
-  if (placeNotes.length > 0) {
-    html.push(
-      `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(placeNotes, true)}</div>`
-    );
-  }
-
-  html.push(`<br>`);
-
-  // CONTACT
-  html.push(this.sectionTitle(tr.contact, color));
-  html.push(`<div style="margin-top: 6px;">`);
-  html.push(`<div><strong>${this.e(tr.name)}:</strong> ${this.e(r.contact.name)}</div>`);
-
-  const tel = r.contact.tel.trim();
-  const gsm = r.contact.gsm.trim();
-  const email = r.contact.email.trim();
-
-  if (tel.length > 0) html.push(`<div><strong>${this.e(tr.tel)}:</strong> ${this.e(tel)}</div>`);
-  if (gsm.length > 0) html.push(`<div><strong>${this.e(tr.gsm)}:</strong> ${this.e(gsm)}</div>`);
-  if (email.length > 0) html.push(`<div><strong>${this.e(tr.email)}:</strong> ${this.e(email)}</div>`);
-
-  html.push(`</div>`);
-
-  html.push(this.wrapperEnd());
-  return html.join("").trim();
-}
 
 
 

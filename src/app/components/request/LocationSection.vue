@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import type { LocationInfo } from "../../models/installationModels";
+  import type { LocationInfo } from "../../models/installationModels";
 
-const props = defineProps<{
-  modelValue: LocationInfo;
-  title: string;
-  notes: string;
-}>();
+  const props = defineProps<{
+    modelValue: LocationInfo;
+    title: string;
+    notes: string;
+  }>();
 
-const emit = defineEmits<{
-  "update:modelValue": [value: LocationInfo];
-  "update:title": [value: string];
-  "update:notes": [value: string];
-}>();
+  const emit = defineEmits<{
+    "update:modelValue": [value: LocationInfo];
+    "update:title": [value: string];
+    "update:notes": [value: string];
+  }>();
 
-function updateField<TKey extends keyof LocationInfo>(
-  key: TKey,
-  value: LocationInfo[TKey]
-): void {
-  emit("update:modelValue", {
-    ...props.modelValue,
-    [key]: value
-  });
-}
+  function updateField<TKey extends keyof LocationInfo>(
+    key: TKey,
+    value: LocationInfo[TKey],
+  ): void {
+    emit("update:modelValue", {
+      ...props.modelValue,
+      [key]: value,
+    });
+  }
 </script>
 
 <template>
@@ -31,17 +31,21 @@ function updateField<TKey extends keyof LocationInfo>(
     <label>Titel</label>
     <input
       :value="title"
-      @input="$emit('update:title', ($event.target as HTMLInputElement).value)"
-    />
+      @input="
+        $emit('update:title', ($event.target as HTMLInputElement).value)
+      " />
 
-    <div class="two" style="margin-top: 10px">
+    <div
+      class="two"
+      style="margin-top: 10px">
       <div>
         <label>Locatie</label>
         <input
           :value="modelValue.name"
           placeholder="Total Energies Muide"
-          @input="updateField('name', ($event.target as HTMLInputElement).value)"
-        />
+          @input="
+            updateField('name', ($event.target as HTMLInputElement).value)
+          " />
       </div>
 
       <div>
@@ -49,19 +53,23 @@ function updateField<TKey extends keyof LocationInfo>(
         <input
           :value="modelValue.street"
           placeholder="Goolestraat 2"
-          @input="updateField('street', ($event.target as HTMLInputElement).value)"
-        />
+          @input="
+            updateField('street', ($event.target as HTMLInputElement).value)
+          " />
       </div>
     </div>
 
-    <div class="two" style="margin-top: 10px">
+    <div
+      class="two"
+      style="margin-top: 10px">
       <div style="margin-top: 10px">
         <label>Postcode + Stad</label>
         <input
           :value="modelValue.postalCity"
           placeholder="9000 Gent"
-          @input="updateField('postalCity', ($event.target as HTMLInputElement).value)"
-        />
+          @input="
+            updateField('postalCity', ($event.target as HTMLInputElement).value)
+          " />
       </div>
     </div>
 
@@ -70,7 +78,8 @@ function updateField<TKey extends keyof LocationInfo>(
       class="textarea-compact"
       :value="notes"
       placeholder="Vrij veld"
-      @input="$emit('update:notes', ($event.target as HTMLTextAreaElement).value)"
-    ></textarea>
+      @input="
+        $emit('update:notes', ($event.target as HTMLTextAreaElement).value)
+      "></textarea>
   </div>
 </template>

@@ -51,28 +51,28 @@ export function useInstallerCatalog(request: InstallationRequest) {
 
   const filteredInstallers = computed<InstallerRecord[]>(() => {
 
-  const search = installerSearch.value.trim().toLowerCase();
+    const search = installerSearch.value.trim().toLowerCase();
 
-  if (search.length === 0) {
-    return installers.value;
-  }
+    if (search.length === 0) {
+      return installers.value;
+    }
 
-  return installers.value.filter((installer) => {
-    const companyName = installer.companyName.trim().toLowerCase();
-    const contactPerson = installer.contactPerson.trim().toLowerCase();
-    const email = installer.email.trim().toLowerCase();
-    const gsm = installer.gsm.trim().toLowerCase();
+    return installers.value.filter((installer) => {
+      const companyName = installer.companyName.trim().toLowerCase();
+      const contactPerson = installer.contactPerson.trim().toLowerCase();
+      const email = installer.email.trim().toLowerCase();
+      const gsm = installer.gsm.trim().toLowerCase();
 
-    return (
-      companyName.includes(search) ||
-      contactPerson.includes(search) ||
-      email.includes(search) ||
-      gsm.includes(search)
-    );
+      return (
+        companyName.includes(search) ||
+        contactPerson.includes(search) ||
+        email.includes(search) ||
+        gsm.includes(search)
+      );
+    });
+
+
   });
-
-  
-});
 
   const selectedInstaller = computed<InstallerRecord | null>(() => {
     const id = request.installerSelection.selectedId;
@@ -118,7 +118,7 @@ export function useInstallerCatalog(request: InstallationRequest) {
     },
     { immediate: true }
   );
- 
+
   function pickExistingInstaller(id: string): void {
     const ins = installers.value.find((x) => x.id === id);
     if (!ins) return;
@@ -130,11 +130,11 @@ export function useInstallerCatalog(request: InstallationRequest) {
   }
 
   function pickNewInstaller(): void {
-  request.installerSelection.mode = "new";
-  request.installerSelection.selectedId = "";
-  request.installerSelection.newInstaller.companyName = installerSearch.value.trim();
-  installerOpen.value = false;
-}
+    request.installerSelection.mode = "new";
+    request.installerSelection.selectedId = "";
+    request.installerSelection.newInstaller.companyName = installerSearch.value.trim();
+    installerOpen.value = false;
+  }
 
   function saveNewInstaller(): void {
     const n = request.installerSelection.newInstaller;
@@ -196,7 +196,7 @@ export function useInstallerCatalog(request: InstallationRequest) {
     installerEdit,
     selectedInstaller,
     activeInstaller,
-    filteredInstallers,   
+    filteredInstallers,
     pickExistingInstaller,
     pickNewInstaller,
     saveNewInstaller,
