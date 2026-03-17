@@ -1,15 +1,25 @@
 <script setup lang="ts">
-defineProps<{
-  plannedDate: string;
-  plannedTime: string;
-  planningNotes: string;
+import type { PlanningInfo } from "../../models/installationModels";
+
+const props = defineProps<{
+  modelValue: PlanningInfo;
+  notes: string;
 }>();
 
-defineEmits<{
-  "update:plannedDate": [value: string];
-  "update:plannedTime": [value: string];
-  "update:planningNotes": [value: string];
+const emit = defineEmits<{
+  "update:modelValue": [value: PlanningInfo];
+  "update:notes": [value: string];
 }>();
+
+function updateField<TKey extends keyof PlanningInfo>(
+  key: TKey,
+  value: PlanningInfo[TKey]
+): void {
+  emit("update:modelValue", {
+    ...props.modelValue,
+    [key]: value
+  });
+}
 </script>
 
 <template>
@@ -21,8 +31,8 @@ defineEmits<{
         <label>Datum</label>
         <input
           type="date"
-          :value="plannedDate"
-          @input="$emit('update:plannedDate', ($event.target as HTMLInputElement).value)"
+          :value="modelValue.plannedDate"
+          @input="updateField('plannedDate', ($event.target as HTMLInputElement).value)"
         />
         <div class="hint">Leeg = te bepalen met klant</div>
       </div>
@@ -31,19 +41,19 @@ defineEmits<{
         <label>Tijd</label>
         <input
           type="time"
-          :value="plannedTime"
-          @input="$emit('update:plannedTime', ($event.target as HTMLInputElement).value)"
+          :value="modelValue.plannedTime"
+          @input="updateField('plannedTime', ($event.target as HTMLInputElement).value)"
         />
         <div class="hint">Leeg = te bepalen met klant</div>
       </div>
     </div>
 
-    <label style="margin-top: 10px;">Opmerking datum installatie</label>
+    <label style="margin-top: 10px">Opmerking datum installatie</label>
     <textarea
       class="textarea-compact"
-      :value="planningNotes"
+      :value="notes"
       placeholder="Vrij veld"
-      @input="$emit('update:planningNotes', ($event.target as HTMLTextAreaElement).value)"
+      @input="$emit('update:notes', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
   </div>
 </template>

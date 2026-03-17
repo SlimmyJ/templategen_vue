@@ -19,20 +19,18 @@ import EndingSection from "./app/components/request/EndingSection.vue";
 
 import PreviewPanel from "./app/components/preview/PreviewPanel.vue";
 
-
 type PreviewTab = "installer" | "customer";
 
 const requestRepository = new LocalInstallationRequestRepository();
 const { request, reset } = useInstallationRequest(requestRepository);
 
 const {
-  installers,
+  filteredInstallers,
   installerSearch,
   installerOpen,
   installerEdit,
   selectedInstaller,
-  activeInstaller,
-  onInstallerPick,
+  activeInstaller,  
   pickExistingInstaller,
   pickNewInstaller,
   saveNewInstaller,
@@ -65,8 +63,14 @@ function resetForm(): void {
   reset();
 }
 
-</script>
+function updateInstallerPicker(picker: { search: string; open: boolean }): void {
+  installerSearch.value = picker.search;
+  installerOpen.value = picker.open;
+}
 
+
+
+</script>
 
 <template>
   <TopBar brandText="Geofleet V2 Planning" :leftItems="[{ key: 'Installlers', label: 'Installateurs', active: true }]"
@@ -84,79 +88,49 @@ function resetForm(): void {
       <div class="card">
         <LanguageSection v-model="request.language" />
 
-        <IntroSection :salutation-prefix="request.intro.salutationPrefix"
-          :salutation-name="request.intro.salutationName" :request-line="request.intro.requestLine"
-          @update:salutation-prefix="request.intro.salutationPrefix = $event"
-          @update:salutation-name="request.intro.salutationName = $event"
-          @update:request-line="request.intro.requestLine = $event" />
+        <IntroSection v-model="request.intro" />
 
-        <PlanningSection :planned-date="request.planning.plannedDate" :planned-time="request.planning.plannedTime"
-          :planning-notes="request.notes.planningNotes" @update:planned-date="request.planning.plannedDate = $event"
-          @update:planned-time="request.planning.plannedTime = $event"
-          @update:planning-notes="request.notes.planningNotes = $event" />
+        <PlanningSection v-model="request.planning" v-model:notes="request.notes.planningNotes" />
 
-        <InstallationDetailsSection :details-text="request.installation.detailsText"
-          @update:details-text="request.installation.detailsText = $event" />
+        <InstallationDetailsSection v-model="request.installation" />
         <VehicleSection :vehicle-table="request.vehicleTable" :vehicles="request.vehicles"
-          :vehicle-notes="request.notes.vehicleNotes" @update:vehicle-notes="request.notes.vehicleNotes = $event"
-          @paste="onVehiclePaste" @file-select="onVehicleFileSelected" @drop="onVehicleDrop"
-          @drag-over="onVehicleDragOver" @clear-table="clearVehicleTable" @add-vehicle="addVehicle"
-          @remove-vehicle="removeVehicle" />
+          :vehicle-notes="request.notes.vehicleNotes" @update:vehicles="request.vehicles = $event"
+          @update:vehicle-notes="request.notes.vehicleNotes = $event" @paste="onVehiclePaste"
+          @file-select="onVehicleFileSelected" @drop="onVehicleDrop" @drag-over="onVehicleDragOver"
+          @clear-table="clearVehicleTable" @add-vehicle="addVehicle" @remove-vehicle="removeVehicle" />
 
-        <LocationSection :installation-place-line="request.notes.installationPlaceLine"
-          :location-name="request.location.name" :street="request.location.street"
-          :postal-city="request.location.postalCity" :installation-place-notes="request.notes.installationPlaceNotes"
-          @update:installation-place-line="request.notes.installationPlaceLine = $event"
-          @update:location-name="request.location.name = $event" @update:street="request.location.street = $event"
-          @update:postal-city="request.location.postalCity = $event"
-          @update:installation-place-notes="request.notes.installationPlaceNotes = $event" />
-        <ContactSection :name="request.contact.name" :tel="request.contact.tel" :gsm="request.contact.gsm"
-          :email="request.contact.email" @update:name="request.contact.name = $event"
-          @update:tel="request.contact.tel = $event" @update:gsm="request.contact.gsm = $event"
-          @update:email="request.contact.email = $event" />
-  <InstallerSection
-  :installers="installers"
-  :installer-search="installerSearch"
-  :installer-open="installerOpen"
+        <LocationSection v-model="request.location" v-model:title="request.notes.installationPlaceLine"
+          v-model:notes="request.notes.installationPlaceNotes" />
+        <ContactSection v-model="request.contact" />
+        <InstallerSection
+  :installers="filteredInstallers"
+  :picker="{ search: installerSearch, open: installerOpen }"
   :mode="request.installerSelection.mode"
   :selected-installer="selectedInstaller"
   :new-installer="request.installerSelection.newInstaller"
   :installer-edit="installerEdit"
-  @update:installer-search="installerSearch = $event"
-  @update:installer-open="installerOpen = $event"
-  @update:new-installer-company-name="request.installerSelection.newInstaller.companyName = $event"
-  @update:new-installer-contact-person="request.installerSelection.newInstaller.contactPerson = $event"
-  @update:new-installer-email="request.installerSelection.newInstaller.email = $event"
-  @update:new-installer-gsm="request.installerSelection.newInstaller.gsm = $event"
-  @update:installer-edit-company-name="installerEdit.companyName = $event"
-  @update:installer-edit-contact-person="installerEdit.contactPerson = $event"
-  @update:installer-edit-email="installerEdit.email = $event"
-  @update:installer-edit-gsm="installerEdit.gsm = $event"
-  @installer-pick="onInstallerPick"
+ @update:picker="updateInstallerPicker"
+  @update:new-installer="request.installerSelection.newInstaller = $event"
+  @update:installer-edit="
+    installerEdit.companyName = $event.companyName;
+    installerEdit.contactPerson = $event.contactPerson;
+    installerEdit.email = $event.email;
+    installerEdit.gsm = $event.gsm;
+  "
   @pick-existing-installer="pickExistingInstaller"
   @pick-new-installer="pickNewInstaller"
   @save-new-installer="saveNewInstaller"
   @save-selected-installer-edits="saveSelectedInstallerEdits"
   @delete-selected-installer="deleteSelectedInstaller"
 />
-        <EndingSection :confirm-line="request.ending.confirmLine" :thanks-line="request.ending.thanksLine"
-          @update:confirm-line="request.ending.confirmLine = $event"
-          @update:thanks-line="request.ending.thanksLine = $event" />
+        <EndingSection v-model="request.ending" />
       </div>
 
-     <PreviewPanel
-  :active-tab="activeTab"
-  :installer-html="renderedInstaller.htmlBody"
-  :customer-html="renderedCustomer.htmlBody"
-  :installer-subject="renderedInstaller.subject"
-  :customer-subject="renderedCustomer.subject"
-  :status="status"
-  @update:active-tab="activeTab = $event"
-  @copy-installer="copyInstaller"
-  @copy-customer="copyCustomer"
-  @copy-calendar="copyCalendar"
-  @reset="resetForm"
-/>
+      <PreviewPanel :active-tab="activeTab" :installer-html="renderedInstaller.htmlBody"
+        :customer-html="renderedCustomer.htmlBody" :installer-subject="renderedInstaller.subject"
+        :customer-subject="renderedCustomer.subject" :status="status" @update:active-tab="activeTab = $event"
+        @copy-installer="copyInstaller" @copy-customer="copyCustomer" @copy-calendar="copyCalendar"
+        @reset="resetForm" />
     </div>
   </div>
 </template>

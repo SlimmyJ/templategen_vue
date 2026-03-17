@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { VehicleLine, VehicleTable } from "../../models/installationModels";
 
-defineProps<{
-  vehicleTable: VehicleTable;
+const props = defineProps<{
   vehicles: VehicleLine[];
+  vehicleTable: VehicleTable;
   vehicleNotes: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
+  "update:vehicles": [value: VehicleLine[]];
   "update:vehicleNotes": [value: string];
   paste: [event: ClipboardEvent];
   fileSelect: [event: Event];
@@ -17,6 +18,25 @@ defineEmits<{
   addVehicle: [];
   removeVehicle: [index: number];
 }>();
+
+function updateVehicleField<TKey extends keyof VehicleLine>(
+  index: number,
+  key: TKey,
+  value: VehicleLine[TKey]
+): void {
+  const updatedVehicles = props.vehicles.map((vehicle, vehicleIndex) => {
+    if (vehicleIndex !== index) {
+      return vehicle;
+    }
+
+    return {
+      ...vehicle,
+      [key]: value
+    };
+  });
+
+  emit("update:vehicles", updatedVehicles);
+}
 </script>
 
 <template>
@@ -32,46 +52,53 @@ defineEmits<{
       <div class="paste-area" contenteditable="true" @paste="$emit('paste', $event)"></div>
 
       <div class="actions">
-        <input class="file-input" type="file" accept=".csv,text/csv" @change="$emit('fileSelect', $event)" />
+        <input
+          class="file-input"
+          type="file"
+          accept=".csv,text/csv"
+          @change="$emit('fileSelect', $event)"
+        />
         <button type="button" @click="$emit('clearTable')">
           Tabel wissen
         </button>
       </div>
     </div>
 
-    <div v-if="vehicleTable.html.trim().length === 0" style="margin-top: 10px;">
+    <div v-if="vehicleTable.html.trim().length === 0" style="margin-top: 10px">
       <div class="hint" style="margin-bottom: 10px">
         Geen tabel ingeplakt.
       </div>
 
       <div
-        v-for="(v, index) in vehicles"
+        v-for="(vehicle, index) in vehicles"
         :key="index"
         class="vehicle-row"
         style="margin-bottom: 10px"
       >
         <input
-          :value="v.brand"
+          :value="vehicle.brand"
           placeholder="Merk"
-          @input="v.brand = ($event.target as HTMLInputElement).value"
+          @input="updateVehicleField(index, 'brand', ($event.target as HTMLInputElement).value)"
         />
         <input
-          :value="v.model"
+          :value="vehicle.model"
           placeholder="Model"
-          @input="v.model = ($event.target as HTMLInputElement).value"
+          @input="updateVehicleField(index, 'model', ($event.target as HTMLInputElement).value)"
         />
         <input
           type="number"
           min="1"
-          :value="v.quantity"
-          @input="v.quantity = Number(($event.target as HTMLInputElement).value)"
+          :value="vehicle.quantity"
+          @input="updateVehicleField(index, 'quantity', Number(($event.target as HTMLInputElement).value))"
         />
         <input
-          :value="v.licensePlate"
+          :value="vehicle.licensePlate"
           placeholder="Kenteken"
-          @input="v.licensePlate = ($event.target as HTMLInputElement).value"
+          @input="updateVehicleField(index, 'licensePlate', ($event.target as HTMLInputElement).value)"
         />
-        <button type="button" class="vehicle-remove" @click="$emit('removeVehicle', index)">X</button>
+        <button type="button" class="vehicle-remove" @click="$emit('removeVehicle', index)">
+          X
+        </button>
       </div>
 
       <div class="vehicle-row vehicle-add-row">

@@ -24,34 +24,22 @@ defineEmits<{
     <label>Preview</label>
 
     <div class="tabbar">
-      <button
-        type="button"
-        :class="{ active: activeTab === 'installer' }"
-        @click="$emit('update:activeTab', 'installer')"
-      >
+      <button type="button" :class="{ active: activeTab === 'installer' }"
+        @click="$emit('update:activeTab', 'installer')">
         Installateur
       </button>
 
-      <button
-        type="button"
-        :class="{ active: activeTab === 'customer' }"
-        @click="$emit('update:activeTab', 'customer')"
-      >
+      <button type="button" :class="{ active: activeTab === 'customer' }"
+        @click="$emit('update:activeTab', 'customer')">
         Klant
       </button>
     </div>
 
-    <div
-      class="preview"
-      v-html="activeTab === 'installer' ? installerHtml : customerHtml"
-    ></div>
+    <div class="preview" v-html="activeTab === 'installer' ? installerHtml : customerHtml"></div>
 
     <div style="margin-top: 14px">
       <label>Onderwerp</label>
-      <input
-        :value="activeTab === 'installer' ? installerSubject : customerSubject"
-        readonly
-      />
+      <input :value="activeTab === 'installer' ? installerSubject : customerSubject" readonly />
     </div>
 
     <div class="actions">

@@ -1,17 +1,23 @@
 <script setup lang="ts">
-defineProps<{
-  name: string;
-  tel: string;
-  gsm: string;
-  email: string;
+import type { ContactInfo } from "../../models/installationModels";
+
+const props = defineProps<{
+  modelValue: ContactInfo;
 }>();
 
-defineEmits<{
-  "update:name": [value: string];
-  "update:tel": [value: string];
-  "update:gsm": [value: string];
-  "update:email": [value: string];
+const emit = defineEmits<{
+  "update:modelValue": [value: ContactInfo];
 }>();
+
+function updateField<TKey extends keyof ContactInfo>(
+  key: TKey,
+  value: ContactInfo[TKey]
+): void {
+  emit("update:modelValue", {
+    ...props.modelValue,
+    [key]: value
+  });
+}
 </script>
 
 <template>
@@ -22,17 +28,18 @@ defineEmits<{
       <div>
         <label>Naam</label>
         <input
-          :value="name"
+          :value="modelValue.name"
           placeholder="Dhr. Van Der Vaert"
-          @input="$emit('update:name', ($event.target as HTMLInputElement).value)"
+          @input="updateField('name', ($event.target as HTMLInputElement).value)"
         />
       </div>
+
       <div>
         <label>Tel</label>
         <input
-          :value="tel"
+          :value="modelValue.tel"
           placeholder="+32 9 335 61 35"
-          @input="$emit('update:tel', ($event.target as HTMLInputElement).value)"
+          @input="updateField('tel', ($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>
@@ -41,17 +48,18 @@ defineEmits<{
       <div>
         <label>GSM</label>
         <input
-          :value="gsm"
+          :value="modelValue.gsm"
           placeholder="+32 470 00 11 23"
-          @input="$emit('update:gsm', ($event.target as HTMLInputElement).value)"
+          @input="updateField('gsm', ($event.target as HTMLInputElement).value)"
         />
       </div>
+
       <div>
         <label>Email</label>
         <input
-          :value="email"
+          :value="modelValue.email"
           placeholder="naam@bedrijf.be"
-          @input="$emit('update:email', ($event.target as HTMLInputElement).value)"
+          @input="updateField('email', ($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>

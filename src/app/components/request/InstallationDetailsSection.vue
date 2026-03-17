@@ -1,11 +1,20 @@
 <script setup lang="ts">
-defineProps<{
-  detailsText: string;
+import type { InstallationDetails } from "../../models/installationModels";
+
+const props = defineProps<{
+  modelValue: InstallationDetails;
 }>();
 
-defineEmits<{
-  "update:detailsText": [value: string];
+const emit = defineEmits<{
+  "update:modelValue": [value: InstallationDetails];
 }>();
+
+function updateDetails(value: string): void {
+  emit("update:modelValue", {
+    ...props.modelValue,
+    detailsText: value
+  });
+}
 </script>
 
 <template>
@@ -14,9 +23,9 @@ defineEmits<{
 
     <label>Details</label>
     <textarea
-      :value="detailsText"
+      :value="modelValue.detailsText"
       placeholder="Bijvoorbeeld: 8 x FMC234 + extra info"
-      @input="$emit('update:detailsText', ($event.target as HTMLTextAreaElement).value)"
+      @input="updateDetails(($event.target as HTMLTextAreaElement).value)"
     ></textarea>
   </div>
 </template>

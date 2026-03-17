@@ -1,15 +1,23 @@
 <script setup lang="ts">
-defineProps<{
-  salutationPrefix: string;
-  salutationName: string;
-  requestLine: string;
+import type { IntroText } from "../../models/installationModels";
+
+const props = defineProps<{
+  modelValue: IntroText;
 }>();
 
-defineEmits<{
-  "update:salutationPrefix": [value: string];
-  "update:salutationName": [value: string];
-  "update:requestLine": [value: string];
+const emit = defineEmits<{
+  "update:modelValue": [value: IntroText];
 }>();
+
+function updateField<TKey extends keyof IntroText>(
+  key: TKey,
+  value: IntroText[TKey]
+): void {
+  emit("update:modelValue", {
+    ...props.modelValue,
+    [key]: value
+  });
+}
 </script>
 
 <template>
@@ -20,21 +28,21 @@ defineEmits<{
     <div class="salutation-row">
       <input
         class="salutation-prefix"
-        :value="salutationPrefix"
-        @input="$emit('update:salutationPrefix', ($event.target as HTMLInputElement).value)"
+        :value="modelValue.salutationPrefix"
+        @input="updateField('salutationPrefix', ($event.target as HTMLInputElement).value)"
       />
       <input
-        :value="salutationName"
+        :value="modelValue.salutationName"
         placeholder="Naam"
-        @input="$emit('update:salutationName', ($event.target as HTMLInputElement).value)"
+        @input="updateField('salutationName', ($event.target as HTMLInputElement).value)"
       />
     </div>
 
     <label style="margin-top: 10px">Intro</label>
     <textarea
       class="textarea-compact muted-editable"
-      :value="requestLine"
-      @input="$emit('update:requestLine', ($event.target as HTMLTextAreaElement).value)"
+      :value="modelValue.requestLine"
+      @input="updateField('requestLine', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
   </div>
 </template>

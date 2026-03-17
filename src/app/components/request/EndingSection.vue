@@ -1,13 +1,23 @@
 <script setup lang="ts">
-defineProps<{
-  confirmLine: string;
-  thanksLine: string;
+import type { EndingText } from "../../models/installationModels";
+
+const props = defineProps<{
+  modelValue: EndingText;
 }>();
 
-defineEmits<{
-  "update:confirmLine": [value: string];
-  "update:thanksLine": [value: string];
+const emit = defineEmits<{
+  "update:modelValue": [value: EndingText];
 }>();
+
+function updateField<TKey extends keyof EndingText>(
+  key: TKey,
+  value: EndingText[TKey]
+): void {
+  emit("update:modelValue", {
+    ...props.modelValue,
+    [key]: value
+  });
+}
 </script>
 
 <template>
@@ -17,15 +27,15 @@ defineEmits<{
     <label>Bevestiging</label>
     <textarea
       class="textarea-compact muted-editable"
-      :value="confirmLine"
-      @input="$emit('update:confirmLine', ($event.target as HTMLTextAreaElement).value)"
+      :value="modelValue.confirmLine"
+      @input="updateField('confirmLine', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
 
     <label style="margin-top: 10px">Dankzin</label>
     <textarea
       class="textarea-compact muted-editable"
-      :value="thanksLine"
-      @input="$emit('update:thanksLine', ($event.target as HTMLTextAreaElement).value)"
+      :value="modelValue.thanksLine"
+      @input="updateField('thanksLine', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
   </div>
 </template>

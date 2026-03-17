@@ -49,6 +49,31 @@ export function useInstallerCatalog(request: InstallationRequest) {
 
   reloadInstallers();
 
+  const filteredInstallers = computed<InstallerRecord[]>(() => {
+
+  const search = installerSearch.value.trim().toLowerCase();
+
+  if (search.length === 0) {
+    return installers.value;
+  }
+
+  return installers.value.filter((installer) => {
+    const companyName = installer.companyName.trim().toLowerCase();
+    const contactPerson = installer.contactPerson.trim().toLowerCase();
+    const email = installer.email.trim().toLowerCase();
+    const gsm = installer.gsm.trim().toLowerCase();
+
+    return (
+      companyName.includes(search) ||
+      contactPerson.includes(search) ||
+      email.includes(search) ||
+      gsm.includes(search)
+    );
+  });
+
+  
+});
+
   const selectedInstaller = computed<InstallerRecord | null>(() => {
     const id = request.installerSelection.selectedId;
     if (!id) return null;
@@ -93,46 +118,7 @@ export function useInstallerCatalog(request: InstallationRequest) {
     },
     { immediate: true }
   );
-
-  function onInstallerPick(): void {
-    const value = installerSearch.value.trim();
-
-    if (value.length === 0) {
-      request.installerSelection.mode = "existing";
-      request.installerSelection.selectedId = "";
-      return;
-    }
-
-    if (value.toLowerCase() === "nieuwe installateur") {
-      request.installerSelection.mode = "new";
-      request.installerSelection.selectedId = "";
-      return;
-    }
-
-    const normalized = value.toLowerCase();
-
-    let match = installers.value.find((x) => x.companyName.trim().toLowerCase() === normalized) ?? null;
-
-    if (!match) {
-      match = installers.value.find((x) => x.companyName.trim().toLowerCase().startsWith(normalized)) ?? null;
-    }
-
-    if (!match) {
-      match = installers.value.find((x) => x.companyName.trim().toLowerCase().includes(normalized)) ?? null;
-    }
-
-    if (match) {
-      request.installerSelection.mode = "existing";
-      request.installerSelection.selectedId = match.id;
-      installerSearch.value = match.companyName;
-      return;
-    }
-
-    request.installerSelection.mode = "new";
-    request.installerSelection.selectedId = "";
-    request.installerSelection.newInstaller.companyName = value;
-  }
-
+ 
   function pickExistingInstaller(id: string): void {
     const ins = installers.value.find((x) => x.id === id);
     if (!ins) return;
@@ -144,10 +130,11 @@ export function useInstallerCatalog(request: InstallationRequest) {
   }
 
   function pickNewInstaller(): void {
-    request.installerSelection.mode = "new";
-    request.installerSelection.selectedId = "";
-    installerOpen.value = false;
-  }
+  request.installerSelection.mode = "new";
+  request.installerSelection.selectedId = "";
+  request.installerSelection.newInstaller.companyName = installerSearch.value.trim();
+  installerOpen.value = false;
+}
 
   function saveNewInstaller(): void {
     const n = request.installerSelection.newInstaller;
@@ -209,7 +196,7 @@ export function useInstallerCatalog(request: InstallationRequest) {
     installerEdit,
     selectedInstaller,
     activeInstaller,
-    onInstallerPick,
+    filteredInstallers,   
     pickExistingInstaller,
     pickNewInstaller,
     saveNewInstaller,

@@ -1,19 +1,27 @@
 <script setup lang="ts">
-defineProps<{
-  installationPlaceLine: string;
-  locationName: string;
-  street: string;
-  postalCity: string;
-  installationPlaceNotes: string;
+import type { LocationInfo } from "../../models/installationModels";
+
+const props = defineProps<{
+  modelValue: LocationInfo;
+  title: string;
+  notes: string;
 }>();
 
-defineEmits<{
-  "update:installationPlaceLine": [value: string];
-  "update:locationName": [value: string];
-  "update:street": [value: string];
-  "update:postalCity": [value: string];
-  "update:installationPlaceNotes": [value: string];
+const emit = defineEmits<{
+  "update:modelValue": [value: LocationInfo];
+  "update:title": [value: string];
+  "update:notes": [value: string];
 }>();
+
+function updateField<TKey extends keyof LocationInfo>(
+  key: TKey,
+  value: LocationInfo[TKey]
+): void {
+  emit("update:modelValue", {
+    ...props.modelValue,
+    [key]: value
+  });
+}
 </script>
 
 <template>
@@ -22,25 +30,26 @@ defineEmits<{
 
     <label>Titel</label>
     <input
-      :value="installationPlaceLine"
-      @input="$emit('update:installationPlaceLine', ($event.target as HTMLInputElement).value)"
+      :value="title"
+      @input="$emit('update:title', ($event.target as HTMLInputElement).value)"
     />
 
     <div class="two" style="margin-top: 10px">
       <div>
         <label>Locatie</label>
         <input
-          :value="locationName"
+          :value="modelValue.name"
           placeholder="Total Energies Muide"
-          @input="$emit('update:locationName', ($event.target as HTMLInputElement).value)"
+          @input="updateField('name', ($event.target as HTMLInputElement).value)"
         />
       </div>
+
       <div>
         <label>Straat</label>
         <input
-          :value="street"
+          :value="modelValue.street"
           placeholder="Goolestraat 2"
-          @input="$emit('update:street', ($event.target as HTMLInputElement).value)"
+          @input="updateField('street', ($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>
@@ -49,9 +58,9 @@ defineEmits<{
       <div style="margin-top: 10px">
         <label>Postcode + Stad</label>
         <input
-          :value="postalCity"
+          :value="modelValue.postalCity"
           placeholder="9000 Gent"
-          @input="$emit('update:postalCity', ($event.target as HTMLInputElement).value)"
+          @input="updateField('postalCity', ($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>
@@ -59,9 +68,9 @@ defineEmits<{
     <label style="margin-top: 10px">Opmerking installatieplaats</label>
     <textarea
       class="textarea-compact"
-      :value="installationPlaceNotes"
+      :value="notes"
       placeholder="Vrij veld"
-      @input="$emit('update:installationPlaceNotes', ($event.target as HTMLTextAreaElement).value)"
+      @input="$emit('update:notes', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
   </div>
 </template>
