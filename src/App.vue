@@ -3,9 +3,9 @@
   import { LocalInstallationRequestRepository } from "./app/repositories/local/LocalInstallationRequestRepository";
 
   import type { InstallerInfo } from "./app/models/installationModels";
-  
+
   import { useVehicleImport } from "./app/composables/useVehicleImport";
-  import { useInstallationRequest } from "./app/composables/useInstallationRequest";  
+  import { useInstallationRequest } from "./app/composables/useInstallationRequest";
   import { useEmailPreview } from "./app/composables/useEmailPreview";
   import { useInstallerCatalog } from "./app/composables/useInstallerCatalog";
 
@@ -20,8 +20,6 @@
   import ContactSection from "./app/components/request/ContactSection.vue";
   import EndingSection from "./app/components/request/EndingSection.vue";
   import PreviewPanel from "./app/components/preview/PreviewPanel.vue";
-
-
 
   type PreviewTab = "installer" | "customer";
 
