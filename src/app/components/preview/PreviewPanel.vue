@@ -1,14 +1,22 @@
 <script setup lang="ts">
 type PreviewTab = "installer" | "customer";
 
-defineProps<{
+withDefaults(defineProps<{
   activeTab: PreviewTab;
   installerHtml: string;
-  customerHtml: string;
-  installerSubject: string;
-  customerSubject: string;
+  customerHtml?: string;
+  installerSubject?: string;
+  customerSubject?: string;
   status: string;
-}>();
+  showCustomerTab?: boolean;
+  showCalendarCopy?: boolean;
+}>(), {
+  customerHtml: "",
+  installerSubject: "",
+  customerSubject: "",
+  showCustomerTab: true,
+  showCalendarCopy: true
+});
 
 defineEmits<{
   "update:activeTab": [value: PreviewTab];
@@ -23,7 +31,7 @@ defineEmits<{
   <div class="card">
     <label>Preview</label>
 
-    <div class="tabbar">
+    <div class="tabbar" v-if="showCustomerTab">
       <button type="button" :class="{ active: activeTab === 'installer' }"
         @click="$emit('update:activeTab', 'installer')">
         Installateur
@@ -47,11 +55,11 @@ defineEmits<{
         Copy installateur
       </button>
 
-      <button type="button" @click="$emit('copyCustomer')">
+      <button v-if="showCustomerTab" type="button" @click="$emit('copyCustomer')">
         Copy klant
       </button>
 
-      <button type="button" @click="$emit('copyCalendar')">
+      <button v-if="showCalendarCopy" type="button" @click="$emit('copyCalendar')">
         Copy kalender
       </button>
 

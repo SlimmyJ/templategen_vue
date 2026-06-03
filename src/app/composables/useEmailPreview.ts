@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import type { ComputedRef } from "vue";
 import type { InstallationRequest, InstallerInfo } from "../models/installationModels";
 import { TemplateRenderer } from "../services/templateRenderer";
 import { ClipboardService } from "../services/clipboardService";
@@ -9,21 +10,18 @@ function getErrorMessage(error: unknown): string {
 
 export function useEmailPreview(
   request: InstallationRequest,
-  activeInstaller: { value: InstallerInfo }
+  activeInstaller: ComputedRef<InstallerInfo>
 ) {
   const renderer = new TemplateRenderer();
   const clipboard = new ClipboardService();
   const status = ref<string>("");
 
   const renderedInstaller = computed(() => renderer.renderInstallerEmail(request));
-  const renderedCustomer = computed(() =>
-    renderer.renderCustomerEmail(request, activeInstaller.value)
-  );
+  const renderedCustomer = computed(() => renderer.renderCustomerEmail(request, activeInstaller.value));
   const renderedCalendar = computed(() => renderer.renderCalendarSnippet(request));
 
   async function copyHtmlWithStatus(html: string, successMessage: string): Promise<void> {
     status.value = "";
-
     try {
       await clipboard.copyHtmlOnly(html);
       status.value = successMessage;
@@ -33,24 +31,15 @@ export function useEmailPreview(
   }
 
   async function copyInstaller(): Promise<void> {
-    await copyHtmlWithStatus(
-      renderedInstaller.value.htmlBody,
-      "Installateur mail gekopieerd (HTML)."
-    );
+    await copyHtmlWithStatus(renderedInstaller.value.htmlBody, "Installateur mail gekopieerd (HTML).");
   }
 
   async function copyCustomer(): Promise<void> {
-    await copyHtmlWithStatus(
-      renderedCustomer.value.htmlBody,
-      "Klant mail gekopieerd (HTML)."
-    );
+    await copyHtmlWithStatus(renderedCustomer.value.htmlBody, "Klant mail gekopieerd (HTML).");
   }
 
   async function copyCalendar(): Promise<void> {
-    await copyHtmlWithStatus(
-      renderedCalendar.value.htmlBody,
-      "Kalender snippet gekopieerd (HTML)."
-    );
+    await copyHtmlWithStatus(renderedCalendar.value.htmlBody, "Kalender snippet gekopieerd (HTML).");
   }
 
   return {

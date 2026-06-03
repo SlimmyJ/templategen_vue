@@ -1,4 +1,5 @@
 import type { InstallationRequest, InstallerInfo } from "../models/installationModels";
+import type { InspectionRequest, InspectionItem } from "../models/inspectionModels";
 
 export type TemplateResult = {
   subject: string;
@@ -9,236 +10,176 @@ export interface ITemplateRenderer {
   renderInstallerEmail(request: InstallationRequest): TemplateResult;
   renderCustomerEmail(request: InstallationRequest, installer: InstallerInfo): TemplateResult;
   renderCalendarSnippet(request: InstallationRequest): TemplateResult;
-
+  renderInspectionInstallerEmail(request: InspectionRequest, installer: InstallerInfo): TemplateResult;
 }
 
 type Tr = ReturnType<TemplateRenderer["t"]>;
+type Ti = ReturnType<TemplateRenderer["tInspection"]>;
 
 export class TemplateRenderer implements ITemplateRenderer {
+
+  // ── Public entry points ────────────────────────────────────────────────────
+
   public renderInstallerEmail(request: InstallationRequest): TemplateResult {
     return {
       subject: this.buildInstallerSubject(request),
-      htmlBody: this.buildInstallerHtml(request),
+      htmlBody: this.buildInstallerHtml(request)
     };
   }
 
   public renderCustomerEmail(request: InstallationRequest, installer: InstallerInfo): TemplateResult {
     return {
       subject: this.buildCustomerSubject(request),
-      htmlBody: this.buildCustomerHtml(request, installer),
+      htmlBody: this.buildCustomerHtml(request, installer)
     };
   }
 
   public renderCalendarSnippet(request: InstallationRequest): TemplateResult {
     return {
       subject: "",
-      htmlBody: this.buildInstallerCalendarHtml(request),
+      htmlBody: this.buildInstallerCalendarHtml(request)
     };
   }
 
-
-
-
-  private subjectSafe(value: string): string {
-    return value.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  public renderInspectionInstallerEmail(request: InspectionRequest, _installer: InstallerInfo): TemplateResult {
+    return {
+      subject: this.buildInspectionSubject(request),
+      htmlBody: this.buildInspectionHtml(request)
+    };
   }
 
+  // ── Subject builders ───────────────────────────────────────────────────────
+
   private buildInstallerSubject(r: InstallationRequest): string {
+    const tr = this.t(r.language);
     const details = this.subjectSafe(r.installation.detailsText);
     const city = this.subjectSafe(r.location.postalCity);
-
-    const left = details.length > 0 ? details : "Installatie";
-    const right = city.length > 0 ? city : "";
-
-    return `Installatie inplannen - ${left}${right.length > 0 ? " - " + right : ""}`.trim();
+    const left = details.length > 0 ? details : tr.subjectInstallFallback;
+    return `${tr.subjectInstallPrefix} - ${left}${city.length > 0 ? " - " + city : ""}`;
   }
 
   private buildCustomerSubject(r: InstallationRequest): string {
+    const tr = this.t(r.language);
     const desc = this.subjectSafe(r.customerEmail.salesOrderDescription);
-    const value = desc.length > 0 ? desc : "installatie";
-    return `Planning ${value}`.trim();
+    return `${tr.subjectPlanningPrefix} ${desc.length > 0 ? desc : tr.subjectInstallFallback.toLowerCase()}`.trim();
   }
+
+  private buildInspectionSubject(r: InspectionRequest): string {
+    const ti = this.tInspection(r.language);
+    const tr = this.t(r.language);
+    const firstIdcode = (r.items[0]?.idcode ?? "").trim();
+    const city = this.subjectSafe(r.location.postalCity);
+    let subject = ti.subjectPrefix;
+    if (firstIdcode.length > 0) subject += ` - IDCODE ${firstIdcode}`;
+    if (city.length > 0) subject += ` - ${city}`;
+    void tr; // tr available if needed for future use
+    return subject;
+  }
+
+  // ── Installation email ─────────────────────────────────────────────────────
 
   private buildInstallerHtml(r: InstallationRequest): string {
     const tr = this.t(r.language);
     const color = this.getBrandColor(r);
     const html: string[] = [];
 
-    const introLine = r.intro.requestLine.trim();
-    const planningNote = r.notes.planningNotes.trim();
-    const vehicleNote = r.notes.vehicleNotes.trim();
-    const placeTitle = r.notes.installationPlaceLine.trim().length > 0 ? r.notes.installationPlaceLine.trim() : tr.installPlace;
-    const placeNote = r.notes.installationPlaceNotes.trim();
-    const confirmLine = r.ending.confirmLine.trim();
-    const thanksLine = r.ending.thanksLine.trim();
-
     html.push(this.wrapperStart());
 
-    html.push(`<div>${this.e(this.buildInstallerGreeting(r), true)}</div>`);
+    html.push(`<div>${this.e(this.buildGreeting(r.intro, tr), true)}</div>`);
     html.push(`<br>`);
-    if (introLine.length > 0) {
-      html.push(`<div>${this.e(introLine, true)}</div>`);
+
+    if (r.intro.requestLine.trim().length > 0) {
+      html.push(`<div>${this.e(r.intro.requestLine.trim(), true)}</div>`);
       html.push(`<br>`);
     }
 
-    html.push(this.sectionTitle(tr.dateInstall, color));
-    html.push(`<ul style="margin-top: 6px;">`);
-    html.push(`<li><strong>${this.e(tr.date)}:</strong> ${this.e(this.formatDate(r, tr))}</li>`);
-    html.push(`<li><strong>${this.e(tr.time)}:</strong> ${this.e(this.formatTime(r, tr))}</li>`);
-    html.push(`</ul>`);
-
-    // ✅ planning note should show on installer mail whenever it is filled (even if date/time exists)
-    if (planningNote.length > 0) {
-      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(planningNote, true)}</div>`);
-    }
+    // ✅ planning note shows on installer mail even when date/time are filled
+    html.push(...this.buildPlanningSectionHtml(
+      r.planning.plannedDate.trim(),
+      r.planning.plannedTime.trim(),
+      r.notes.planningNotes.trim(),
+      tr.dateInstall,
+      tr,
+      color
+    ));
     html.push(`<br>`);
 
     html.push(this.sectionTitle(tr.installationDetails, color));
-    const detailsText = r.installation.detailsText.trim();
-    if (detailsText.length > 0) {
-      html.push(`<div style="margin-top: 6px;">${this.e(detailsText, true)}</div>`);
+    if (r.installation.detailsText.trim().length > 0) {
+      html.push(`<div style="margin-top: 6px;">${this.e(r.installation.detailsText.trim(), true)}</div>`);
     }
     html.push(`<br>`);
 
     html.push(this.sectionTitle(tr.vehicleDetails, color));
     html.push(this.buildVehicleHtml(r, tr));
-    if (vehicleNote.length > 0) {
-      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(vehicleNote, true)}</div>`);
+    if (r.notes.vehicleNotes.trim().length > 0) {
+      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(r.notes.vehicleNotes.trim(), true)}</div>`);
     }
     html.push(`<br>`);
 
-    html.push(this.sectionTitle(placeTitle, color));
-    html.push(`<div style="margin-top: 6px;">`);
-    html.push(`<div><strong>${this.e(tr.location)}:</strong> ${this.e(r.location.name)}</div>`);
-    html.push(`<div>${this.e(r.location.street)}</div>`);
-    html.push(`<div>${this.e(r.location.postalCity.trim())}</div>`);
-    html.push(`</div>`);
-    if (placeNote.length > 0) {
-      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(placeNote, true)}</div>`);
-    }
+    const placeTitle = r.notes.installationPlaceLine.trim() || tr.installPlace;
+    html.push(...this.buildLocationSectionHtml(r.location, r.notes.installationPlaceNotes.trim(), placeTitle, tr, color));
     html.push(`<br>`);
 
-    html.push(this.sectionTitle(tr.contact, color));
-    html.push(`<div style="margin-top: 6px;">`);
-    html.push(`<div><strong>${this.e(tr.name)}:</strong> ${this.e(r.contact.name)}</div>`);
-
-    const tel = r.contact.tel.trim();
-    const gsm = r.contact.gsm.trim();
-    const email = r.contact.email.trim();
-
-    if (tel.length > 0) html.push(`<div><strong>${this.e(tr.tel)}:</strong> ${this.e(tel)}</div>`);
-    if (gsm.length > 0) html.push(`<div><strong>${this.e(tr.gsm)}:</strong> ${this.e(gsm)}</div>`);
-    if (email.length > 0) html.push(`<div><strong>${this.e(tr.email)}:</strong> ${this.e(email)}</div>`);
-
-    html.push(`</div>`);
+    html.push(...this.buildContactSectionHtml(r.contact, tr, color));
     html.push(`<br>`);
 
-    if (confirmLine.length > 0) {
-      html.push(`<div><strong>${this.e(confirmLine, true)}</strong></div>`);
-      html.push(`<br>`);
-    }
-    if (thanksLine.length > 0) {
-      html.push(`<div>${this.e(thanksLine, true)}</div>`);
-    }
+    html.push(...this.buildEndingHtml(r.ending.confirmLine, r.ending.thanksLine));
 
     html.push(this.wrapperEnd());
     return html.join("").trim();
   }
+
+  // ── Calendar snippet (installer email without greeting/intro/ending) ───────
 
   private buildInstallerCalendarHtml(r: InstallationRequest): string {
     const tr = this.t(r.language);
     const color = this.getBrandColor(r);
-
-    const placeTitle =
-      r.notes.installationPlaceLine.trim().length > 0
-        ? r.notes.installationPlaceLine.trim()
-        : tr.installPlace;
-
     const html: string[] = [];
-
-    const planningNotes = r.notes.planningNotes.trim();
-    const detailsText = r.installation.detailsText.trim();
-    const vehicleNotes = r.notes.vehicleNotes.trim();
-    const placeNotes = r.notes.installationPlaceNotes.trim();
 
     html.push(this.wrapperStart());
 
-    // DATE/TIME
-    html.push(this.sectionTitle(tr.dateInstall, color));
-    html.push(`<ul style="margin-top: 6px;">`);
-    html.push(`<li><strong>${this.e(tr.date)}:</strong> ${this.e(this.formatDate(r, tr))}</li>`);
-    html.push(`<li><strong>${this.e(tr.time)}:</strong> ${this.e(this.formatTime(r, tr))}</li>`);
-    html.push(`</ul>`);
-
-    if (planningNotes.length > 0) {
-      html.push(
-        `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(planningNotes, true)}</div>`
-      );
-    }
-
+    html.push(...this.buildPlanningSectionHtml(
+      r.planning.plannedDate.trim(),
+      r.planning.plannedTime.trim(),
+      r.notes.planningNotes.trim(),
+      tr.dateInstall,
+      tr,
+      color
+    ));
     html.push(`<br>`);
 
-    // INSTALLATION DETAILS
     html.push(this.sectionTitle(tr.installationDetails, color));
-    if (detailsText.length > 0) {
-      html.push(`<div style="margin-top: 6px;">${this.e(detailsText, true)}</div>`);
+    if (r.installation.detailsText.trim().length > 0) {
+      html.push(`<div style="margin-top: 6px;">${this.e(r.installation.detailsText.trim(), true)}</div>`);
     }
     html.push(`<br>`);
 
-    // VEHICLES
     html.push(this.sectionTitle(tr.vehicleDetails, color));
     html.push(this.buildVehicleHtml(r, tr));
-
-    if (vehicleNotes.length > 0) {
-      html.push(
-        `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(vehicleNotes, true)}</div>`
-      );
+    if (r.notes.vehicleNotes.trim().length > 0) {
+      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(r.notes.vehicleNotes.trim(), true)}</div>`);
     }
     html.push(`<br>`);
 
-    // LOCATION
-    html.push(this.sectionTitle(placeTitle, color));
-    html.push(`<div style="margin-top: 6px;">`);
-    html.push(`<div><strong>${this.e(tr.location)}:</strong> ${this.e(r.location.name)}</div>`);
-    html.push(`<div>${this.e(r.location.street)}</div>`);
-    html.push(`<div>${this.e(r.location.postalCity.trim())}</div>`);
-    html.push(`</div>`);
-
-    if (placeNotes.length > 0) {
-      html.push(
-        `<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(placeNotes, true)}</div>`
-      );
-    }
-
+    const placeTitle = r.notes.installationPlaceLine.trim() || tr.installPlace;
+    html.push(...this.buildLocationSectionHtml(r.location, r.notes.installationPlaceNotes.trim(), placeTitle, tr, color));
     html.push(`<br>`);
 
-    // CONTACT
-    html.push(this.sectionTitle(tr.contact, color));
-    html.push(`<div style="margin-top: 6px;">`);
-    html.push(`<div><strong>${this.e(tr.name)}:</strong> ${this.e(r.contact.name)}</div>`);
-
-    const tel = r.contact.tel.trim();
-    const gsm = r.contact.gsm.trim();
-    const email = r.contact.email.trim();
-
-    if (tel.length > 0) html.push(`<div><strong>${this.e(tr.tel)}:</strong> ${this.e(tel)}</div>`);
-    if (gsm.length > 0) html.push(`<div><strong>${this.e(tr.gsm)}:</strong> ${this.e(gsm)}</div>`);
-    if (email.length > 0) html.push(`<div><strong>${this.e(tr.email)}:</strong> ${this.e(email)}</div>`);
-
-    html.push(`</div>`);
+    html.push(...this.buildContactSectionHtml(r.contact, tr, color));
 
     html.push(this.wrapperEnd());
     return html.join("").trim();
   }
 
-
+  // ── Customer email ─────────────────────────────────────────────────────────
 
   private buildCustomerHtml(r: InstallationRequest, installer: InstallerInfo): string {
     const tr = this.t(r.language);
     const color = this.getBrandColor(r);
     const html: string[] = [];
 
-    const prefix = r.customerEmail.intro.salutationPrefix.trim().length > 0 ? r.customerEmail.intro.salutationPrefix.trim() : tr.best;
+    const prefix = r.customerEmail.intro.salutationPrefix.trim() || tr.best;
     const name = r.customerEmail.intro.salutationName.trim();
     const greeting = name.length > 0 ? `${prefix} ${name},` : `${prefix},`;
 
@@ -250,62 +191,37 @@ export class TemplateRenderer implements ITemplateRenderer {
     html.push(`<div>${this.e(greeting)}</div>`);
     html.push(`<br>`);
 
-    const who = (() => {
-      if (person.length > 0 && company.length > 0) {
-        return tr.installerWhoFull
-          .split("{person}").join(`<strong>${this.e(person)}</strong>`)
-          .split("{company}").join(`<strong>${this.e(company)}</strong>`);
-      }
-      if (company.length > 0) {
-        return tr.installerWhoCompanyOnly
-          .split("{company}").join(`<strong>${this.e(company)}</strong>`);
-      }
-      if (person.length > 0) return `<strong>${this.e(person)}</strong>`;
-      return this.e(tr.installer);
-    })();
-
+    const who = this.buildInstallerWho(person, company, tr);
     html.push(`<div>${this.e(tr.customerIntroPrefix)} ${who} ${this.e(tr.customerWillContact)}</div>`);
     html.push(`<br>`);
 
     const hasDate = r.planning.plannedDate.trim().length > 0;
     const hasTime = r.planning.plannedTime.trim().length > 0;
-
     if (hasDate || hasTime) {
       html.push(this.sectionTitle(tr.dateInstall, color));
       html.push(`<ul style="margin-top: 6px;">`);
-
       if (hasDate) html.push(`<li><strong>${this.e(tr.date)}:</strong> ${this.e(r.planning.plannedDate.trim())}</li>`);
       if (hasTime) html.push(`<li><strong>${this.e(tr.time)}:</strong> ${this.e(r.planning.plannedTime.trim())}</li>`);
-
       html.push(`</ul>`);
       html.push(`<br>`);
     }
 
     html.push(this.sectionTitle(tr.vehicleDetails, color));
     const vehicleHtml = this.buildVehicleHtml(r, tr);
-    html.push(vehicleHtml.length > 0 ? vehicleHtml : `<div>(Geen voertuigen opgegeven)</div>`);
+    html.push(vehicleHtml.length > 0 ? vehicleHtml : `<div>${this.e(tr.noVehicles)}</div>`);
     html.push(`<br>`);
 
-    html.push(this.sectionTitle(tr.installPlace, color));
-    html.push(`<div style="margin-top: 6px;">`);
-    html.push(`<div><strong>${this.e(tr.location)}:</strong> ${this.e(r.location.name)}</div>`);
-    html.push(`<div>${this.e(r.location.street)}</div>`);
-    html.push(`<div>${this.e(r.location.postalCity.trim())}</div>`);
-    html.push(`</div>`);
+    html.push(...this.buildLocationSectionHtml(r.location, "", tr.installPlace, tr, color));
     html.push(`<br>`);
 
     html.push(this.sectionTitle(tr.contact, color));
     html.push(`<div style="margin-top: 6px;">`);
-
     if (company.length > 0) html.push(`<div><strong>${this.e(tr.company)}:</strong> ${this.e(company)}</div>`);
     if (person.length > 0) html.push(`<div><strong>${this.e(tr.contactPersonLabel)}:</strong> ${this.e(person)}</div>`);
-
     const gsm = (installer.gsm ?? "").trim();
     const email = (installer.email ?? "").trim();
-
     if (gsm.length > 0) html.push(`<div><strong>${this.e(tr.gsm)}:</strong> ${this.e(gsm)}</div>`);
     if (email.length > 0) html.push(`<div><strong>${this.e(tr.email)}:</strong> ${this.e(email)}</div>`);
-
     html.push(`</div>`);
     html.push(`<br>`);
 
@@ -315,22 +231,197 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html.join("").trim();
   }
 
-  private buildInstallerGreeting(r: InstallationRequest): string {
+  // ── Inspection email ───────────────────────────────────────────────────────
+
+  private buildInspectionHtml(r: InspectionRequest): string {
     const tr = this.t(r.language);
-    const prefix = r.intro.salutationPrefix.trim().length > 0 ? r.intro.salutationPrefix.trim() : tr.best;
-    const name = r.intro.salutationName.trim();
+    const ti = this.tInspection(r.language);
+    const color = this.getBrandColor(r);
+    const html: string[] = [];
+
+    html.push(this.wrapperStart());
+
+    html.push(`<div>${this.e(this.buildGreeting(r.intro, tr), true)}</div>`);
+    html.push(`<br>`);
+
+    if (r.intro.requestLine.trim().length > 0) {
+      html.push(`<div>${this.e(r.intro.requestLine.trim(), true)}</div>`);
+      html.push(`<br>`);
+    }
+
+    html.push(...this.buildPlanningSectionHtml(
+      r.planning.plannedDate.trim(),
+      r.planning.plannedTime.trim(),
+      r.notes.planningNotes.trim(),
+      ti.when,
+      tr,
+      color
+    ));
+    html.push(`<br>`);
+
+    if (r.detailsText.trim().length > 0) {
+      html.push(this.sectionTitle(ti.wat, color));
+      html.push(`<div style="margin-top: 6px;">${this.e(r.detailsText.trim(), true)}</div>`);
+      html.push(`<br>`);
+    }
+
+    for (const [index, item] of r.items.entries()) {
+      html.push(...this.buildInspectionItemHtml(item, index, tr, ti, color));
+    }
+
+    html.push(...this.buildLocationSectionHtml(r.location, r.notes.locationNotes.trim(), ti.nazichtPlace, tr, color));
+    html.push(`<br>`);
+
+    html.push(...this.buildContactSectionHtml(r.contact, tr, color));
+    html.push(`<br>`);
+
+    html.push(...this.buildEndingHtml(r.ending.confirmLine, r.ending.thanksLine));
+
+    html.push(this.wrapperEnd());
+    return html.join("").trim();
+  }
+
+  private buildInspectionItemHtml(
+    item: InspectionItem,
+    index: number,
+    tr: Tr,
+    ti: Ti,
+    color: string
+  ): string[] {
+    const html: string[] = [];
+    const idcode = item.idcode.trim();
+    const itemTitle = idcode.length > 0
+      ? `${ti.nazicht} — IDCODE ${idcode}`
+      : `${ti.nazicht} #${index + 1}`;
+
+    html.push(this.sectionTitle(itemTitle, color));
+    html.push(`<div style="margin-top: 6px;">`);
+
+    const problem = item.problemDescription.trim();
+    if (problem.length > 0) {
+      html.push(`<div><strong>${this.e(ti.problem)}:</strong> ${this.e(problem, true)}</div>`);
+    }
+
+    const solution = item.solution.trim();
+    if (solution.length > 0) {
+      html.push(`<div style="margin-top: 4px;"><strong>${this.e(ti.solution)}:</strong> ${this.e(solution, true)}</div>`);
+    }
+
+    const { typeLabel, brand, model, licensePlate } = item.vehicle;
+    const hasVehicle = [typeLabel, brand, model, licensePlate].some((v) => v.trim().length > 0);
+    if (hasVehicle) {
+      html.push(`<div style="margin-top: 8px;">`);
+      if (typeLabel.trim().length > 0) html.push(`<div><strong>${this.e(ti.vehicle)}:</strong> ${this.e(typeLabel.trim())}</div>`);
+      if (brand.trim().length > 0) html.push(`<div><strong>${this.e(ti.brand)}:</strong> ${this.e(brand.trim())}</div>`);
+      if (model.trim().length > 0) html.push(`<div><strong>${this.e(ti.type)}:</strong> ${this.e(model.trim())}</div>`);
+      if (licensePlate.trim().length > 0) html.push(`<div><strong>${this.e(ti.plate)}:</strong> ${this.e(licensePlate.trim())}</div>`);
+      html.push(`</div>`);
+    }
+
+    html.push(`</div>`);
+    html.push(`<br>`);
+    return html;
+  }
+
+  // ── Shared section builders ────────────────────────────────────────────────
+
+  private buildGreeting(
+    intro: { salutationPrefix: string; salutationName: string },
+    tr: Tr
+  ): string {
+    const prefix = intro.salutationPrefix.trim() || tr.best;
+    const name = intro.salutationName.trim();
     return name.length === 0 ? `${prefix},` : `${prefix} ${name},`;
   }
 
-  private formatDate(r: InstallationRequest, tr: Tr): string {
-    const v = r.planning.plannedDate.trim();
-    return v.length === 0 ? tr.tbdCustomer : v;
+  private buildPlanningSectionHtml(
+    date: string,
+    time: string,
+    note: string,
+    sectionLabel: string,
+    tr: Tr,
+    color: string
+  ): string[] {
+    const html: string[] = [];
+    html.push(this.sectionTitle(sectionLabel, color));
+    html.push(`<ul style="margin-top: 6px;">`);
+    html.push(`<li><strong>${this.e(tr.date)}:</strong> ${this.e(date || tr.tbdCustomer)}</li>`);
+    html.push(`<li><strong>${this.e(tr.time)}:</strong> ${this.e(time || tr.tbdCustomer)}</li>`);
+    html.push(`</ul>`);
+    if (note.length > 0) {
+      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(note, true)}</div>`);
+    }
+    return html;
   }
 
-  private formatTime(r: InstallationRequest, tr: Tr): string {
-    const v = r.planning.plannedTime.trim();
-    return v.length === 0 ? tr.tbdCustomer : v;
+  private buildLocationSectionHtml(
+    location: { name: string; street: string; postalCity: string },
+    note: string,
+    sectionLabel: string,
+    tr: Tr,
+    color: string
+  ): string[] {
+    const html: string[] = [];
+    html.push(this.sectionTitle(sectionLabel, color));
+    html.push(`<div style="margin-top: 6px;">`);
+    if (location.name.trim().length > 0) {
+      html.push(`<div><strong>${this.e(tr.location)}:</strong> ${this.e(location.name)}</div>`);
+    }
+    html.push(`<div>${this.e(location.street)}</div>`);
+    html.push(`<div>${this.e(location.postalCity.trim())}</div>`);
+    html.push(`</div>`);
+    if (note.length > 0) {
+      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(note, true)}</div>`);
+    }
+    return html;
   }
+
+  private buildContactSectionHtml(
+    contact: { name: string; tel?: string; gsm?: string; email?: string },
+    tr: Tr,
+    color: string
+  ): string[] {
+    const html: string[] = [];
+    html.push(this.sectionTitle(tr.contact, color));
+    html.push(`<div style="margin-top: 6px;">`);
+    html.push(`<div><strong>${this.e(tr.name)}:</strong> ${this.e(contact.name)}</div>`);
+    const tel = (contact.tel ?? "").trim();
+    const gsm = (contact.gsm ?? "").trim();
+    const email = (contact.email ?? "").trim();
+    if (tel.length > 0) html.push(`<div><strong>${this.e(tr.tel)}:</strong> ${this.e(tel)}</div>`);
+    if (gsm.length > 0) html.push(`<div><strong>${this.e(tr.gsm)}:</strong> ${this.e(gsm)}</div>`);
+    if (email.length > 0) html.push(`<div><strong>${this.e(tr.email)}:</strong> ${this.e(email)}</div>`);
+    html.push(`</div>`);
+    return html;
+  }
+
+  private buildEndingHtml(confirmLine: string, thanksLine: string): string[] {
+    const html: string[] = [];
+    if (confirmLine.trim().length > 0) {
+      html.push(`<div><strong>${this.e(confirmLine.trim(), true)}</strong></div>`);
+      html.push(`<br>`);
+    }
+    if (thanksLine.trim().length > 0) {
+      html.push(`<div>${this.e(thanksLine.trim(), true)}</div>`);
+    }
+    return html;
+  }
+
+  private buildInstallerWho(person: string, company: string, tr: Tr): string {
+    if (person.length > 0 && company.length > 0) {
+      return tr.installerWhoFull
+        .split("{person}").join(`<strong>${this.e(person)}</strong>`)
+        .split("{company}").join(`<strong>${this.e(company)}</strong>`);
+    }
+    if (company.length > 0) {
+      return tr.installerWhoCompanyOnly
+        .split("{company}").join(`<strong>${this.e(company)}</strong>`);
+    }
+    if (person.length > 0) return `<strong>${this.e(person)}</strong>`;
+    return this.e(tr.installer);
+  }
+
+  // ── Vehicle table ──────────────────────────────────────────────────────────
 
   private buildVehicleHtml(r: InstallationRequest, tr: Tr): string {
     const pastedHtml = r.vehicleTable.html.trim();
@@ -341,7 +432,6 @@ export class TemplateRenderer implements ITemplateRenderer {
     if (!r.vehicles || r.vehicles.length === 0) return "";
 
     const hasAnyPlate = r.vehicles.some((v) => (v.licensePlate ?? "").trim().length > 0);
-
     const header = hasAnyPlate
       ? [tr.thBrand, tr.thModel, tr.thQty, tr.thPlate]
       : [tr.thBrand, tr.thModel, tr.thQty];
@@ -350,7 +440,7 @@ export class TemplateRenderer implements ITemplateRenderer {
       const base = [
         (v.brand ?? "").trim(),
         (v.model ?? "").trim(),
-        String(v.quantity ?? 1),
+        String(v.quantity ?? 1)
       ];
       if (hasAnyPlate) base.push((v.licensePlate ?? "").trim());
       return base;
@@ -367,42 +457,23 @@ export class TemplateRenderer implements ITemplateRenderer {
     const headerStyle = "border:1px solid #999;padding:4px;vertical-align:top;background:#eeeeee;font-weight:bold;";
 
     let html = `<table style="${tableStyle}">`;
-
     for (const [index, row] of rows.entries()) {
       html += "<tr>";
       const isHeader = index === 0;
-
       for (const cell of row) {
-        if (isHeader) html += `<th style="${headerStyle}">${this.e(cell)}</th>`;
-        else html += `<td style="${cellStyle}">${this.e(cell)}</td>`;
+        html += isHeader
+          ? `<th style="${headerStyle}">${this.e(cell)}</th>`
+          : `<td style="${cellStyle}">${this.e(cell)}</td>`;
       }
-
       html += "</tr>";
     }
-
     html += "</table>";
     return `<div style="margin-top:6px;">${html}</div>`;
   }
 
-  private sectionTitle(title: string, color: string): string {
-    return `
-      <br>
-      <div style="
-        margin-top: 6px;
-        margin-bottom: 10px;
-        padding: 8px 10px;
-        border-left: 4px solid ${color};
-        background: #f7f7f7;
-        font-weight: bold;
-      ">${this.e(title)}</div>
-    `;
-  }
-
   private hidePlateColumnIfEmpty(htmlTable: string, translatedPlateHeader: string): string {
     const input = htmlTable.trim();
-    if (input.length === 0) return input;
-
-    if (typeof DOMParser === "undefined") return input;
+    if (input.length === 0 || typeof DOMParser === "undefined") return input;
 
     try {
       const parser = new DOMParser();
@@ -420,51 +491,29 @@ export class TemplateRenderer implements ITemplateRenderer {
       if (headerCells.length === 0) return input;
 
       const norm = (s: string) => s.trim().toLowerCase();
-
       const plateHeaders = new Set<string>([
         norm(translatedPlateHeader),
-        "kenteken",
-        "nummerplaat",
-        "plaque",
-        "immatriculation",
-        "license plate",
-        "plate",
+        "kenteken", "nummerplaat", "plaque", "immatriculation", "license plate", "plate"
       ]);
 
       const plateIndex = headerCells.findIndex((c) => plateHeaders.has(norm(c.textContent ?? "")));
       if (plateIndex < 0) return input;
 
-      let anyNonEmpty = false;
-
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row) continue;
-
-        const cells = Array.from(row.querySelectorAll("th, td"));
-        const cell = cells[plateIndex];
-        if (!cell) continue;
-
-        const text = (cell.textContent ?? "").trim();
-        if (text.length > 0) {
-          anyNonEmpty = true;
-          break;
-        }
-      }
+      const anyNonEmpty = rows.slice(1).some((row) => {
+        const cell = Array.from(row.querySelectorAll("th, td"))[plateIndex];
+        return (cell?.textContent ?? "").trim().length > 0;
+      });
 
       if (anyNonEmpty) return input;
 
       for (const row of rows) {
         const cells = Array.from(row.querySelectorAll("th, td"));
-        const cell = cells[plateIndex];
-        if (!cell) continue;
-
-        cell.remove();
+        cells[plateIndex]?.remove();
       }
 
-      const wrapperDiv =
-        table.parentElement && table.parentElement.tagName.toLowerCase() === "div"
-          ? table.parentElement
-          : null;
+      const wrapperDiv = table.parentElement?.tagName.toLowerCase() === "div"
+        ? table.parentElement
+        : null;
 
       return wrapperDiv ? wrapperDiv.outerHTML : table.outerHTML;
     } catch {
@@ -472,7 +521,23 @@ export class TemplateRenderer implements ITemplateRenderer {
     }
   }
 
-  private getBrandColor(r: InstallationRequest): string {
+  // ── Shared HTML helpers ────────────────────────────────────────────────────
+
+  private sectionTitle(title: string, color: string): string {
+    return `
+      <br>
+      <div style="
+        margin-top: 6px;
+        margin-bottom: 10px;
+        padding: 8px 10px;
+        border-left: 4px solid ${color};
+        background: #f7f7f7;
+        font-weight: bold;
+      ">${this.e(title)}</div>
+    `;
+  }
+
+  private getBrandColor(r: { brandPrimaryColorHex: string }): string {
     const c = r.brandPrimaryColorHex.trim();
     return c.length > 0 ? c : "#C20E1A";
   }
@@ -485,6 +550,10 @@ export class TemplateRenderer implements ITemplateRenderer {
     return `</div>`;
   }
 
+  private subjectSafe(value: string): string {
+    return value.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  }
+
   private e(value: string, preserveBreaks = false): string {
     const encoded = this.htmlEncode(value ?? "");
     return preserveBreaks ? encoded.replace(/\r\n|\r|\n/g, "<br>") : encoded;
@@ -495,8 +564,10 @@ export class TemplateRenderer implements ITemplateRenderer {
       .split("&").join("&amp;")
       .split("<").join("&lt;")
       .split(">").join("&gt;")
-      .split("\"").join("&quot;");
+      .split('"').join("&quot;");
   }
+
+  // ── Translations ───────────────────────────────────────────────────────────
 
   private t(lang: "nl" | "fr") {
     const fr = lang === "fr";
@@ -514,14 +585,15 @@ export class TemplateRenderer implements ITemplateRenderer {
       installPlace: fr ? "Lieu d'installation" : "Installatieplaats",
       contact: fr ? "Personne de contact" : "Contactpersoon",
       notes: fr ? "Remarque" : "Opmerking",
+      noVehicles: fr ? "(Aucun véhicule renseigné)" : "(Geen voertuigen opgegeven)",
 
       date: fr ? "Date" : "Datum",
       time: fr ? "Heure" : "Tijd",
       location: fr ? "Lieu" : "Locatie",
       name: fr ? "Nom" : "Naam",
       tel: fr ? "Tél" : "Tel",
-      gsm: fr ? "GSM" : "GSM",
-      email: fr ? "Email" : "Email",
+      gsm: "GSM",
+      email: "Email",
 
       thBrand: fr ? "Marque" : "Merk",
       thModel: fr ? "Modèle" : "Model",
@@ -533,24 +605,34 @@ export class TemplateRenderer implements ITemplateRenderer {
 
       tbdCustomer: fr ? "À convenir avec le client" : "Te bepalen met klant",
 
+      subjectInstallPrefix: fr ? "Installation à planifier" : "Installatie inplannen",
+      subjectInstallFallback: fr ? "Installation" : "Installatie",
+      subjectPlanningPrefix: fr ? "Planning" : "Planning",
+
       customerIntroPrefix: fr ? "Comme convenu par téléphone," : "Zoals telefonisch besproken zal",
       customerWillContact: fr
         ? "vous contactera directement afin de fixer un rendez-vous pour l'installations suivantes :"
         : "u rechtstreeks contacteren voor het maken van een afspraak voor de volgende installatie:",
-      customerAddressLine: fr ? "À l'adresse ci-dessous :" : "Dit op onderstaand adres:",
       customerQuestions: fr
         ? "Si vous avez des questions entre-temps, vous pouvez bien entendu nous contacter."
-        : "Mocht u in de tussentijd vragen hebben, dan kunt u uiteraard bij ons terecht.",
+        : "Mocht u in de tussentijd vragen hebben, dan kunt u uiteraard bij ons terecht."
+    };
+  }
 
-      installerDefaultIntro: fr
-        ? "Veuillez contacter le client ci-dessous et planifier la mission suivante."
-        : "Gelieve de onderstaande klant te contacteren en de volgende opdracht in te plannen.",
-      installerConfirm: fr
-        ? "Veuillez confirmer la date du rendez-vous à la planning et au client."
-        : "Gelieve de datum van gemaakte afspraak te bevestigen naar planning en klant.",
-      installerThanks: fr
-        ? "Merci d'avance pour le bon traitement de cette demande."
-        : "Alvast bedankt voor de succesvolle verwerking van bovenstaande opdracht.",
+  private tInspection(lang: "nl" | "fr") {
+    const fr = lang === "fr";
+    return {
+      subjectPrefix: fr ? "Révision à planifier" : "Nazicht inplannen",
+      when: fr ? "Date d'intervention" : "Wanneer",
+      wat: fr ? "Mission" : "Wat",
+      nazicht: fr ? "Révision" : "Nazicht",
+      problem: fr ? "Description du problème" : "Probleemomschrijving",
+      solution: fr ? "Solution" : "Oplossing",
+      vehicle: fr ? "Véhicule" : "Voertuig",
+      brand: fr ? "Marque" : "Merk",
+      type: "Type",
+      plate: fr ? "Numéro de plaque" : "Nummerplaat",
+      nazichtPlace: fr ? "Lieu d'intervention" : "Nazichtplaats"
     };
   }
 }

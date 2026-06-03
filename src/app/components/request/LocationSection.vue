@@ -1,11 +1,17 @@
 <script setup lang="ts">
   import type { LocationInfo } from "../../models/installationModels";
 
-  const props = defineProps<{
+  const props = withDefaults(defineProps<{
     modelValue: LocationInfo;
-    title: string;
+    title?: string;
     notes: string;
-  }>();
+    sectionTitle?: string;
+    showTitleField?: boolean;
+  }>(), {
+    title: "",
+    sectionTitle: "Installatieplaats",
+    showTitleField: true
+  });
 
   const emit = defineEmits<{
     "update:modelValue": [value: LocationInfo];
@@ -26,14 +32,14 @@
 
 <template>
   <div class="section">
-    <div class="section-title">Installatieplaats</div>
+    <div class="section-title">{{ props.sectionTitle }}</div>
 
-    <label>Titel</label>
-    <input
-      :value="title"
-      @input="
-        $emit('update:title', ($event.target as HTMLInputElement).value)
-      " />
+    <template v-if="props.showTitleField">
+      <label>Titel</label>
+      <input
+        :value="title"
+        @input="$emit('update:title', ($event.target as HTMLInputElement).value)" />
+    </template>
 
     <div
       class="two"
@@ -73,7 +79,7 @@
       </div>
     </div>
 
-    <label style="margin-top: 10px">Opmerking installatieplaats</label>
+    <label style="margin-top: 10px">Opmerking {{ props.sectionTitle.toLowerCase() }}</label>
     <textarea
       class="textarea-compact"
       :value="notes"

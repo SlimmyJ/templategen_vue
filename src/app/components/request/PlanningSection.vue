@@ -1,10 +1,13 @@
 <script setup lang="ts">
   import type { PlanningInfo } from "../../models/installationModels";
 
-  const props = defineProps<{
+  const props = withDefaults(defineProps<{
     modelValue: PlanningInfo;
     notes: string;
-  }>();
+    sectionTitle?: string;
+  }>(), {
+    sectionTitle: "Datum installatie"
+  });
 
   const emit = defineEmits<{
     "update:modelValue": [value: PlanningInfo];
@@ -24,7 +27,7 @@
 
 <template>
   <div class="section">
-    <div class="section-title">Datum installatie</div>
+    <div class="section-title">{{ props.sectionTitle }}</div>
 
     <div class="two">
       <div>
