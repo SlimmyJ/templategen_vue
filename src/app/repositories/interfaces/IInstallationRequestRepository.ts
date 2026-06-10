@@ -1,7 +1,4 @@
 import type { InstallationRequest } from "../../models/installationModels";
+import type { IDraftRepository } from "./IDraftRepository";
 
-export interface IInstallationRequestRepository {
-  loadDraft(): InstallationRequest | null;
-  saveDraft(request: InstallationRequest): void;
-  clearDraft(): void;
-}
+export type IInstallationRequestRepository = IDraftRepository<InstallationRequest>;

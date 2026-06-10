@@ -1,19 +1,9 @@
 import type { InspectionRequest } from "../../models/inspectionModels";
-import type { IInspectionRequestRepository } from "../interfaces/IInspectionRequestRepository";
-import { InspectionLocalStateService } from "../../services/inspectionLocalStateService";
+import { createDefaultInspectionRequest } from "../../models/inspectionModels";
+import { LocalDraftRepository } from "./LocalDraftRepository";
 
-export class LocalInspectionRequestRepository implements IInspectionRequestRepository {
-  private readonly stateService = new InspectionLocalStateService();
-
-  public loadDraft(): InspectionRequest | null {
-    return this.stateService.load();
-  }
-
-  public saveDraft(request: InspectionRequest): void {
-    this.stateService.save(request);
-  }
-
-  public clearDraft(): void {
-    this.stateService.clear();
+export class LocalInspectionRequestRepository extends LocalDraftRepository<InspectionRequest> {
+  public constructor() {
+    super("templategen.inspectionRequest.v1", createDefaultInspectionRequest);
   }
 }

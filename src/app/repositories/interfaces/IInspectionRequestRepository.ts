@@ -1,7 +1,4 @@
 import type { InspectionRequest } from "../../models/inspectionModels";
+import type { IDraftRepository } from "./IDraftRepository";
 
-export interface IInspectionRequestRepository {
-  loadDraft(): InspectionRequest | null;
-  saveDraft(request: InspectionRequest): void;
-  clearDraft(): void;
-}
+export type IInspectionRequestRepository = IDraftRepository<InspectionRequest>;

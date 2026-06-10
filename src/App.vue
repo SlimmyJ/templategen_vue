@@ -1,9 +1,7 @@
 <script setup lang="ts">
-  import { ref } from "vue";
+  import { reactive, ref } from "vue";
   import { LocalInstallationRequestRepository } from "./app/repositories/local/LocalInstallationRequestRepository";
   import { LocalInspectionRequestRepository } from "./app/repositories/local/LocalInspectionRequestRepository";
-
-  import type { InstallerInfo } from "./app/models/installationModels";
 
   import { useVehicleImport } from "./app/composables/useVehicleImport";
   import { useInstallationRequest } from "./app/composables/useInstallationRequest";
@@ -11,7 +9,6 @@
   import { useInstallerCatalog } from "./app/composables/useInstallerCatalog";
   import { useInspectionRequest } from "./app/composables/useInspectionRequest";
   import { useInspectionEmailPreview } from "./app/composables/useInspectionEmailPreview";
-  import DesignerView from "./app/components/designer/DesignerView.vue";
 
   import TopBar from "./app/components/TopBar.vue";
   import LanguageSection from "./app/components/request/LanguageSection.vue";
@@ -25,27 +22,14 @@
   import EndingSection from "./app/components/request/EndingSection.vue";
   import PreviewPanel from "./app/components/preview/PreviewPanel.vue";
   import InspectionItemsSection from "./app/components/inspection/InspectionItemsSection.vue";
+  import DesignerView from "./app/components/designer/DesignerView.vue";
 
   type PreviewTab = "installer" | "customer";
   type FormMode = "installatie" | "inspection" | "designer";
 
   // ── Installation ──────────────────────────────────────────────────────────────
-  const requestRepository = new LocalInstallationRequestRepository();
-  const { request, reset } = useInstallationRequest(requestRepository);
-
-  const {
-    filteredInstallers,
-    installerSearch,
-    installerOpen,
-    installerEdit,
-    selectedInstaller,
-    activeInstaller,
-    pickExistingInstaller,
-    pickNewInstaller,
-    saveNewInstaller,
-    saveSelectedInstallerEdits,
-    deleteSelectedInstaller
-  } = useInstallerCatalog(request);
+  const { request, reset } = useInstallationRequest(new LocalInstallationRequestRepository());
+  const installerCatalog = reactive(useInstallerCatalog(request));
 
   const {
     onVehiclePaste,
@@ -64,33 +48,20 @@
     copyInstaller,
     copyCustomer,
     copyCalendar
-  } = useEmailPreview(request, activeInstaller);
+  } = useEmailPreview(request, () => installerCatalog.activeInstaller);
 
   const activeTab = ref<PreviewTab>("installer");
 
   // ── Inspection ────────────────────────────────────────────────────────────────
-  const inspectionRepository = new LocalInspectionRequestRepository();
-  const { request: inspectionRequest, reset: resetInspection } = useInspectionRequest(inspectionRepository);
-
-  const {
-    filteredInstallers: inspectionFilteredInstallers,
-    installerSearch: inspectionInstallerSearch,
-    installerOpen: inspectionInstallerOpen,
-    installerEdit: inspectionInstallerEdit,
-    selectedInstaller: inspectionSelectedInstaller,
-    activeInstaller: inspectionActiveInstaller,
-    pickExistingInstaller: inspectionPickExistingInstaller,
-    pickNewInstaller: inspectionPickNewInstaller,
-    saveNewInstaller: inspectionSaveNewInstaller,
-    saveSelectedInstallerEdits: inspectionSaveSelectedInstallerEdits,
-    deleteSelectedInstaller: inspectionDeleteSelectedInstaller
-  } = useInstallerCatalog(inspectionRequest);
+  const { request: inspectionRequest, reset: resetInspection } =
+    useInspectionRequest(new LocalInspectionRequestRepository());
+  const inspectionCatalog = reactive(useInstallerCatalog(inspectionRequest));
 
   const {
     status: inspectionStatus,
     renderedInstaller: inspectionRenderedInstaller,
     copyInstaller: copyInspectionInstaller
-  } = useInspectionEmailPreview(inspectionRequest, inspectionActiveInstaller);
+  } = useInspectionEmailPreview(inspectionRequest);
 
   // ── Mode ──────────────────────────────────────────────────────────────────────
   const formMode = ref<FormMode>("installatie");
@@ -99,44 +70,6 @@
     if (key === "installatie" || key === "inspection" || key === "designer") {
       formMode.value = key;
     }
-  }
-
-  // ── Installation event handlers ───────────────────────────────────────────────
-  function resetForm(): void {
-    reset();
-  }
-
-  function updateInstallerPicker(picker: { search: string; open: boolean }): void {
-    installerSearch.value = picker.search;
-    installerOpen.value = picker.open;
-  }
-
-  function updateNewInstaller(value: InstallerInfo): void {
-    request.installerSelection.newInstaller = value;
-  }
-
-  function updateInstallerEdit(value: InstallerInfo): void {
-    installerEdit.companyName = value.companyName;
-    installerEdit.contactPerson = value.contactPerson;
-    installerEdit.email = value.email;
-    installerEdit.gsm = value.gsm;
-  }
-
-  // ── Inspection event handlers ─────────────────────────────────────────────────
-  function updateInspectionInstallerPicker(picker: { search: string; open: boolean }): void {
-    inspectionInstallerSearch.value = picker.search;
-    inspectionInstallerOpen.value = picker.open;
-  }
-
-  function updateInspectionNewInstaller(value: InstallerInfo): void {
-    inspectionRequest.installerSelection.newInstaller = value;
-  }
-
-  function updateInspectionInstallerEdit(value: InstallerInfo): void {
-    inspectionInstallerEdit.companyName = value.companyName;
-    inspectionInstallerEdit.contactPerson = value.contactPerson;
-    inspectionInstallerEdit.email = value.email;
-    inspectionInstallerEdit.gsm = value.gsm;
   }
 </script>
 
@@ -147,10 +80,6 @@
       { key: 'installatie', label: 'Installaties', active: formMode === 'installatie' },
       { key: 'inspection',  label: 'Nazichten',    active: formMode === 'inspection' },
       { key: 'designer',    label: 'Designer',     active: formMode === 'designer' },
-    ]"
-    :rightItems="[
-      { key: '', label: ' ' },
-      { key: '', label: ' ' },
     ]"
     @clickItem="handleTopBarClick" />
 
@@ -202,20 +131,20 @@
         <ContactSection v-model="request.contact" />
 
         <InstallerSection
-          :installers="filteredInstallers"
-          :picker="{ search: installerSearch, open: installerOpen }"
+          :installers="installerCatalog.filteredInstallers"
+          :picker="{ search: installerCatalog.installerSearch, open: installerCatalog.installerOpen }"
           :mode="request.installerSelection.mode"
-          :selected-installer="selectedInstaller"
+          :selected-installer="installerCatalog.selectedInstaller"
           :new-installer="request.installerSelection.newInstaller"
-          :installer-edit="installerEdit"
-          @update:picker="updateInstallerPicker"
-          @update:new-installer="updateNewInstaller"
-          @update:installer-edit="updateInstallerEdit"
-          @pick-existing-installer="pickExistingInstaller"
-          @pick-new-installer="pickNewInstaller"
-          @save-new-installer="saveNewInstaller"
-          @save-selected-installer-edits="saveSelectedInstallerEdits"
-          @delete-selected-installer="deleteSelectedInstaller" />
+          :installer-edit="installerCatalog.installerEdit"
+          @update:picker="installerCatalog.updatePicker"
+          @update:new-installer="installerCatalog.updateNewInstaller"
+          @update:installer-edit="installerCatalog.updateInstallerEdit"
+          @pick-existing-installer="installerCatalog.pickExistingInstaller"
+          @pick-new-installer="installerCatalog.pickNewInstaller"
+          @save-new-installer="installerCatalog.saveNewInstaller"
+          @save-selected-installer-edits="installerCatalog.saveSelectedInstallerEdits"
+          @delete-selected-installer="installerCatalog.deleteSelectedInstaller" />
 
         <EndingSection v-model="request.ending" />
       </div>
@@ -246,20 +175,20 @@
         <ContactSection v-model="inspectionRequest.contact" />
 
         <InstallerSection
-          :installers="inspectionFilteredInstallers"
-          :picker="{ search: inspectionInstallerSearch, open: inspectionInstallerOpen }"
+          :installers="inspectionCatalog.filteredInstallers"
+          :picker="{ search: inspectionCatalog.installerSearch, open: inspectionCatalog.installerOpen }"
           :mode="inspectionRequest.installerSelection.mode"
-          :selected-installer="inspectionSelectedInstaller"
+          :selected-installer="inspectionCatalog.selectedInstaller"
           :new-installer="inspectionRequest.installerSelection.newInstaller"
-          :installer-edit="inspectionInstallerEdit"
-          @update:picker="updateInspectionInstallerPicker"
-          @update:new-installer="updateInspectionNewInstaller"
-          @update:installer-edit="updateInspectionInstallerEdit"
-          @pick-existing-installer="inspectionPickExistingInstaller"
-          @pick-new-installer="inspectionPickNewInstaller"
-          @save-new-installer="inspectionSaveNewInstaller"
-          @save-selected-installer-edits="inspectionSaveSelectedInstallerEdits"
-          @delete-selected-installer="inspectionDeleteSelectedInstaller" />
+          :installer-edit="inspectionCatalog.installerEdit"
+          @update:picker="inspectionCatalog.updatePicker"
+          @update:new-installer="inspectionCatalog.updateNewInstaller"
+          @update:installer-edit="inspectionCatalog.updateInstallerEdit"
+          @pick-existing-installer="inspectionCatalog.pickExistingInstaller"
+          @pick-new-installer="inspectionCatalog.pickNewInstaller"
+          @save-new-installer="inspectionCatalog.saveNewInstaller"
+          @save-selected-installer-edits="inspectionCatalog.saveSelectedInstallerEdits"
+          @delete-selected-installer="inspectionCatalog.deleteSelectedInstaller" />
 
         <EndingSection v-model="inspectionRequest.ending" />
       </div>
@@ -277,7 +206,7 @@
         @copy-installer="copyInstaller"
         @copy-customer="copyCustomer"
         @copy-calendar="copyCalendar"
-        @reset="resetForm" />
+        @reset="reset" />
 
       <!-- ── Inspection preview ── -->
       <PreviewPanel

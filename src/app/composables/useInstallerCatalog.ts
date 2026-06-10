@@ -6,6 +6,11 @@ type InstallerCatalogTarget = {
   installerSelection: InstallerSelection;
 };
 
+export type InstallerPickerState = {
+  search: string;
+  open: boolean;
+};
+
 const defaultSeed: InstallerRecord[] = [
   { id: "1",  companyName: "Car&Truck Protection", contactPerson: "Dhr. Ronny Michiels", email: "ronny@ronny.be",        gsm: "0476 45 75 75"    },
   { id: "2",  companyName: "VDB Install",           contactPerson: "Anja Goossens",        email: "",                     gsm: ""                 },
@@ -21,25 +26,34 @@ const defaultSeed: InstallerRecord[] = [
   { id: "12", companyName: "Javaco",                 contactPerson: "Niko Gijs",            email: "",                     gsm: ""                 }
 ];
 
-export function useInstallerCatalog(request: InstallerCatalogTarget) {
-  const installerStore = new InstallerStore();
-  installerStore.ensureSeed(defaultSeed);
+// Module-level so every catalog instance (installation + inspection form)
+// shares the same store and sees each other's edits immediately.
+const installerStore = new InstallerStore();
+const installers = ref<InstallerRecord[]>([]);
+let initialized = false;
 
-  const installers = ref<InstallerRecord[]>([]);
+function reloadInstallers(): void {
+  installers.value = installerStore.getAll().map((record) => ({
+    id: record.id,
+    companyName: record.companyName ?? "",
+    contactPerson: record.contactPerson ?? "",
+    email: record.email ?? "",
+    gsm: record.gsm ?? ""
+  }));
+}
+
+function ensureInitialized(): void {
+  if (initialized) return;
+  installerStore.ensureSeed(defaultSeed);
+  reloadInstallers();
+  initialized = true;
+}
+
+export function useInstallerCatalog(request: InstallerCatalogTarget) {
+  ensureInitialized();
+
   const installerSearch = ref<string>("");
   const installerOpen = ref<boolean>(false);
-
-  function reloadInstallers(): void {
-    installers.value = installerStore.getAll().map((x) => ({
-      id: x.id,
-      companyName: x.companyName ?? "",
-      contactPerson: x.contactPerson ?? "",
-      email: x.email ?? "",
-      gsm: x.gsm ?? ""
-    }));
-  }
-
-  reloadInstallers();
 
   const filteredInstallers = computed<InstallerRecord[]>(() => {
     const search = installerSearch.value.trim().toLowerCase();
@@ -83,6 +97,19 @@ export function useInstallerCatalog(request: InstallerCatalogTarget) {
     { immediate: true }
   );
 
+  function updatePicker(picker: InstallerPickerState): void {
+    installerSearch.value = picker.search;
+    installerOpen.value = picker.open;
+  }
+
+  function updateNewInstaller(value: InstallerInfo): void {
+    request.installerSelection.newInstaller = value;
+  }
+
+  function updateInstallerEdit(value: InstallerInfo): void {
+    Object.assign(installerEdit, value);
+  }
+
   function pickExistingInstaller(id: string): void {
     const ins = installers.value.find((x) => x.id === id);
     if (!ins) return;
@@ -100,16 +127,16 @@ export function useInstallerCatalog(request: InstallerCatalogTarget) {
   }
 
   function saveNewInstaller(): void {
-    const n = request.installerSelection.newInstaller;
-    const companyName = n.companyName.trim();
+    const draft = request.installerSelection.newInstaller;
+    const companyName = draft.companyName.trim();
     if (companyName.length === 0) return;
 
     const record: InstallerRecord = {
       id: crypto.randomUUID(),
       companyName,
-      contactPerson: n.contactPerson.trim(),
-      email: n.email.trim(),
-      gsm: n.gsm.trim()
+      contactPerson: draft.contactPerson.trim(),
+      email: draft.email.trim(),
+      gsm: draft.gsm.trim()
     };
 
     installerStore.upsert(record);
@@ -159,6 +186,9 @@ export function useInstallerCatalog(request: InstallerCatalogTarget) {
     selectedInstaller,
     activeInstaller,
     filteredInstallers,
+    updatePicker,
+    updateNewInstaller,
+    updateInstallerEdit,
     pickExistingInstaller,
     pickNewInstaller,
     saveNewInstaller,

@@ -1,34 +1,16 @@
-import { computed, ref } from "vue";
-import type { ComputedRef } from "vue";
+import { computed } from "vue";
 import type { InspectionRequest } from "../models/inspectionModels";
-import type { InstallerInfo } from "../models/installationModels";
 import { TemplateRenderer } from "../services/templateRenderer";
-import { ClipboardService } from "../services/clipboardService";
+import { useCopyStatus } from "./useCopyStatus";
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Onbekende fout";
-}
-
-export function useInspectionEmailPreview(
-  request: InspectionRequest,
-  activeInstaller: ComputedRef<InstallerInfo>
-) {
+export function useInspectionEmailPreview(request: InspectionRequest) {
   const renderer = new TemplateRenderer();
-  const clipboard = new ClipboardService();
-  const status = ref<string>("");
+  const { status, copyHtml } = useCopyStatus();
 
-  const renderedInstaller = computed(() =>
-    renderer.renderInspectionInstallerEmail(request, activeInstaller.value)
-  );
+  const renderedInstaller = computed(() => renderer.renderInspectionInstallerEmail(request));
 
   async function copyInstaller(): Promise<void> {
-    status.value = "";
-    try {
-      await clipboard.copyHtmlOnly(renderedInstaller.value.htmlBody);
-      status.value = "Installateur mail gekopieerd (HTML).";
-    } catch (error) {
-      status.value = `Kon niet kopieren: ${getErrorMessage(error)}`;
-    }
+    await copyHtml(renderedInstaller.value.htmlBody, "Installateur mail gekopieerd (HTML).");
   }
 
   return { status, renderedInstaller, copyInstaller };

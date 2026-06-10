@@ -10,7 +10,7 @@ export interface ITemplateRenderer {
   renderInstallerEmail(request: InstallationRequest): TemplateResult;
   renderCustomerEmail(request: InstallationRequest, installer: InstallerInfo): TemplateResult;
   renderCalendarSnippet(request: InstallationRequest): TemplateResult;
-  renderInspectionInstallerEmail(request: InspectionRequest, installer: InstallerInfo): TemplateResult;
+  renderInspectionInstallerEmail(request: InspectionRequest): TemplateResult;
 }
 
 type Tr = ReturnType<TemplateRenderer["t"]>;
@@ -41,7 +41,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     };
   }
 
-  public renderInspectionInstallerEmail(request: InspectionRequest, _installer: InstallerInfo): TemplateResult {
+  public renderInspectionInstallerEmail(request: InspectionRequest): TemplateResult {
     return {
       subject: this.buildInspectionSubject(request),
       htmlBody: this.buildInspectionHtml(request)
@@ -66,13 +66,11 @@ export class TemplateRenderer implements ITemplateRenderer {
 
   private buildInspectionSubject(r: InspectionRequest): string {
     const ti = this.tInspection(r.language);
-    const tr = this.t(r.language);
     const firstIdcode = (r.items[0]?.idcode ?? "").trim();
     const city = this.subjectSafe(r.location.postalCity);
     let subject = ti.subjectPrefix;
     if (firstIdcode.length > 0) subject += ` - IDCODE ${firstIdcode}`;
     if (city.length > 0) subject += ` - ${city}`;
-    void tr; // tr available if needed for future use
     return subject;
   }
 
@@ -93,35 +91,7 @@ export class TemplateRenderer implements ITemplateRenderer {
       html.push(`<br>`);
     }
 
-    // ✅ planning note shows on installer mail even when date/time are filled
-    html.push(...this.buildPlanningSectionHtml(
-      r.planning.plannedDate.trim(),
-      r.planning.plannedTime.trim(),
-      r.notes.planningNotes.trim(),
-      tr.dateInstall,
-      tr,
-      color
-    ));
-    html.push(`<br>`);
-
-    html.push(this.sectionTitle(tr.installationDetails, color));
-    if (r.installation.detailsText.trim().length > 0) {
-      html.push(`<div style="margin-top: 6px;">${this.e(r.installation.detailsText.trim(), true)}</div>`);
-    }
-    html.push(`<br>`);
-
-    html.push(this.sectionTitle(tr.vehicleDetails, color));
-    html.push(this.buildVehicleHtml(r, tr));
-    if (r.notes.vehicleNotes.trim().length > 0) {
-      html.push(`<div style="margin-top: 6px;"><strong>${this.e(tr.notes)}:</strong> ${this.e(r.notes.vehicleNotes.trim(), true)}</div>`);
-    }
-    html.push(`<br>`);
-
-    const placeTitle = r.notes.installationPlaceLine.trim() || tr.installPlace;
-    html.push(...this.buildLocationSectionHtml(r.location, r.notes.installationPlaceNotes.trim(), placeTitle, tr, color));
-    html.push(`<br>`);
-
-    html.push(...this.buildContactSectionHtml(r.contact, tr, color));
+    html.push(...this.buildInstallationBodyHtml(r, tr, color));
     html.push(`<br>`);
 
     html.push(...this.buildEndingHtml(r.ending.confirmLine, r.ending.thanksLine));
@@ -138,7 +108,16 @@ export class TemplateRenderer implements ITemplateRenderer {
     const html: string[] = [];
 
     html.push(this.wrapperStart());
+    html.push(...this.buildInstallationBodyHtml(r, tr, color));
+    html.push(this.wrapperEnd());
+    return html.join("").trim();
+  }
 
+  /** Planning, details, vehicles, place and contact — shared by the installer email and the calendar snippet. */
+  private buildInstallationBodyHtml(r: InstallationRequest, tr: Tr, color: string): string[] {
+    const html: string[] = [];
+
+    // planning note shows on installer mail even when date/time are filled
     html.push(...this.buildPlanningSectionHtml(
       r.planning.plannedDate.trim(),
       r.planning.plannedTime.trim(),
@@ -168,8 +147,7 @@ export class TemplateRenderer implements ITemplateRenderer {
 
     html.push(...this.buildContactSectionHtml(r.contact, tr, color));
 
-    html.push(this.wrapperEnd());
-    return html.join("").trim();
+    return html;
   }
 
   // ── Customer email ─────────────────────────────────────────────────────────
