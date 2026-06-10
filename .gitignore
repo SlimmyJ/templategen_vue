@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Auto-generated JS files alongside TS/Vue sources
+src/**/*.js
+src/**/*.vue.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
