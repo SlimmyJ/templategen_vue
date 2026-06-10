@@ -266,7 +266,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     }
 
     for (const [index, item] of r.items.entries()) {
-      html.push(...this.buildInspectionItemHtml(item, index, tr, ti, color));
+      html.push(...this.buildInspectionItemHtml(item, index, ti, color));
     }
 
     html.push(...this.buildLocationSectionHtml(r.location, r.notes.locationNotes.trim(), ti.nazichtPlace, tr, color));
@@ -284,7 +284,6 @@ export class TemplateRenderer implements ITemplateRenderer {
   private buildInspectionItemHtml(
     item: InspectionItem,
     index: number,
-    tr: Tr,
     ti: Ti,
     color: string
   ): string[] {
