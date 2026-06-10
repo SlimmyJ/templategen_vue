@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { ref, onMounted, onUnmounted } from "vue";
   import type { InstallerRecord } from "../../services/installerStore";
 
   type InstallerPickerState = {
@@ -17,16 +18,27 @@
     "pick-new-installer": [];
   }>();
 
+  const pickerRef = ref<HTMLElement | null>(null);
+
   function updatePicker(value: Partial<InstallerPickerState>): void {
     emit("update:picker", {
       ...props.picker,
       ...value,
     });
   }
+
+  function handleClickOutside(e: MouseEvent): void {
+    if (props.picker.open && pickerRef.value && !pickerRef.value.contains(e.target as Node)) {
+      updatePicker({ open: false });
+    }
+  }
+
+  onMounted(() => document.addEventListener("mousedown", handleClickOutside));
+  onUnmounted(() => document.removeEventListener("mousedown", handleClickOutside));
 </script>
 
 <template>
-  <div>
+  <div ref="pickerRef">
     <label>Zoek installateur</label>
 
     <div class="picker-row">
@@ -65,7 +77,8 @@
         type="button"
         class="picker-item"
         @click="$emit('pick-existing-installer', installer.id)">
-        {{ installer.companyName }}
+        <span class="picker-item-company">{{ installer.companyName }}</span>
+        <span v-if="installer.contactPerson" class="picker-item-contact">{{ installer.contactPerson }}</span>
       </button>
 
       <div
@@ -77,3 +90,22 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+.picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.picker-item-company {
+  font-size: 12px;
+  color: #111;
+}
+
+.picker-item-contact {
+  font-size: 11px;
+  color: #666;
+}
+</style>

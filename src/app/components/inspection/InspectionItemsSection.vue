@@ -90,7 +90,10 @@
       :key="index"
       class="inspection-item">
       <div class="inspection-item-header">
-        <span class="inspection-item-label">Nazicht #{{ index + 1 }}</span>
+        <span class="inspection-item-label">
+          <span class="item-badge">{{ index + 1 }}</span>
+          Nazicht
+        </span>
         <button
           v-if="items.length > 1"
           type="button"
@@ -186,9 +189,26 @@
 }
 
 .inspection-item-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: bold;
   font-size: 13px;
   color: #444;
+}
+
+.item-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #357bb7;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 .btn-remove-item {
