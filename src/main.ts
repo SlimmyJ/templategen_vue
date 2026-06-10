@@ -6,6 +6,7 @@ import "./styles/layout.css";
 import "./styles/form.css";
 import "./styles/preview.css";
 import "./styles/topbar.css";
+import "./styles/designer.css";
 
 
 createApp(App).mount("#app");

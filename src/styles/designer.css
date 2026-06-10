@@ -1,0 +1,290 @@
+/* ── Grid backgrounds ── */
+:root {
+  --grid-10: repeating-linear-gradient(0deg, #f2f2f2 0 1px, transparent 1px 10px),
+             repeating-linear-gradient(90deg, #f2f2f2 0 1px, transparent 1px 10px);
+  --grid-20: repeating-linear-gradient(0deg, #efefef 0 1px, transparent 1px 20px),
+             repeating-linear-gradient(90deg, #efefef 0 1px, transparent 1px 20px);
+  --grid-30: repeating-linear-gradient(0deg, #ededed 0 1px, transparent 1px 30px),
+             repeating-linear-gradient(90deg, #ededed 0 1px, transparent 1px 30px);
+  --grid-40: repeating-linear-gradient(0deg, #ebebeb 0 1px, transparent 1px 40px),
+             repeating-linear-gradient(90deg, #ebebeb 0 1px, transparent 1px 40px);
+}
+
+/* ── Toolbar ── */
+.designer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  background: #f5f5f5;
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+}
+
+.dt-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dt-divider {
+  width: 1px;
+  height: 22px;
+  background: #ccc;
+  margin: 0 3px;
+}
+
+/* Palette drag buttons */
+.palette-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #c8c8c8;
+  border-radius: 6px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #333;
+  font-size: 14px;
+  transition: background 0.1s, border-color 0.1s;
+}
+.palette-btn:hover  { background: #eef3ff; border-color: #a0b8e0; }
+.palette-btn:active { cursor: grabbing; }
+
+/* Toolbar buttons */
+.dt-btn {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #c8c8c8;
+  background: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: Verdana, Arial, sans-serif;
+  color: #222;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+}
+.dt-btn:hover  { background: #e8e8e8; }
+.dt-btn:active { position: relative; top: 1px; box-shadow: none; }
+.dt-btn--danger:hover { background: #ffeef0; border-color: #f5b8bc; color: #900; }
+
+.dt-label { font-size: 11px; }
+
+/* Grid select */
+.dt-select {
+  height: 28px;
+  padding: 0 4px;
+  border: 1px solid #c8c8c8;
+  border-radius: 3px;
+  background: #fff;
+  font-family: Verdana, Arial, sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* Snap toggle */
+.dt-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-family: Verdana, Arial, sans-serif;
+  cursor: pointer;
+  color: #333;
+  user-select: none;
+}
+
+/* Color picker */
+.color-zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 2px;
+  border: 1px solid #c8c8c8;
+  border-radius: 3px;
+  background: #fafafa;
+  transition: border-color 0.15s;
+}
+.color-zone--active { border-color: #357bb7; background: #eef3ff; }
+
+.dt-color {
+  width: 26px;
+  height: 26px;
+  padding: 1px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+}
+.dt-color:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.color-hint {
+  font-size: 10px;
+  color: #666;
+  font-family: Verdana, Arial, sans-serif;
+  white-space: nowrap;
+}
+
+/* Recent color swatches */
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.15);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.1s;
+}
+.color-swatch:hover { transform: scale(1.15); }
+
+/* ── Board ── */
+.designer-board {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  background: #fff;
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.designer-board.grid-10 { background-image: var(--grid-10); }
+.designer-board.grid-20 { background-image: var(--grid-20); }
+.designer-board.grid-30 { background-image: var(--grid-30); }
+.designer-board.grid-40 { background-image: var(--grid-40); }
+
+/* ── SVG overlay ── */
+.board-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: auto;
+  overflow: visible;
+}
+
+.board-overlay line { pointer-events: stroke; }
+
+.seg-halo {
+  stroke: var(--geo-red, #c20e1a);
+  stroke-width: 14;
+  stroke-linecap: round;
+  opacity: 0.3;
+}
+
+.timeline-segment { cursor: pointer; }
+
+/* ── Nodes ── */
+.d-node {
+  position: absolute;
+  z-index: 2;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  cursor: grab;
+  user-select: none;
+}
+.d-node:active { cursor: grabbing; }
+.d-node i { font-size: 22px; color: #1a1a1a; pointer-events: none; }
+
+.node-delete {
+  display: none;
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #cc0000;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 3;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.d-node:hover .node-delete { display: flex; }
+.node-delete:hover { background: #aa0000; }
+
+/* ── Notes ── */
+.d-note {
+  position: absolute;
+  z-index: 3;
+  min-width: 160px;
+  max-width: 340px;
+  background: #fffde7;
+  border: 1px solid #e0d87a;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.note-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border-bottom: 1px dashed #d6c84a;
+  cursor: grab;
+  color: #999;
+  font-size: 11px;
+  user-select: none;
+}
+.note-handle:active { cursor: grabbing; }
+
+.note-delete {
+  display: none;
+  background: none;
+  border: none;
+  color: #c00;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: bold;
+  padding: 0;
+  line-height: 1;
+}
+.d-note:hover .note-delete { display: block; }
+.note-delete:hover { color: #900; }
+
+.note-body {
+  display: block;
+  width: 100%;
+  border: none;
+  resize: vertical;
+  padding: 6px 8px;
+  font-family: Verdana, Arial, sans-serif;
+  font-size: 12px;
+  background: transparent;
+  min-height: 40px;
+  outline: none;
+  color: #333;
+}
+
+/* ── Empty hint ── */
+.board-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  font-size: 13px;
+  pointer-events: none;
+  user-select: none;
+}

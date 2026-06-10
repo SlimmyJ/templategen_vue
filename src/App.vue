@@ -11,6 +11,7 @@
   import { useInstallerCatalog } from "./app/composables/useInstallerCatalog";
   import { useInspectionRequest } from "./app/composables/useInspectionRequest";
   import { useInspectionEmailPreview } from "./app/composables/useInspectionEmailPreview";
+  import DesignerView from "./app/components/designer/DesignerView.vue";
 
   import TopBar from "./app/components/TopBar.vue";
   import LanguageSection from "./app/components/request/LanguageSection.vue";
@@ -26,7 +27,7 @@
   import InspectionItemsSection from "./app/components/inspection/InspectionItemsSection.vue";
 
   type PreviewTab = "installer" | "customer";
-  type FormMode = "installatie" | "inspection";
+  type FormMode = "installatie" | "inspection" | "designer";
 
   // ── Installation ──────────────────────────────────────────────────────────────
   const requestRepository = new LocalInstallationRequestRepository();
@@ -95,7 +96,7 @@
   const formMode = ref<FormMode>("installatie");
 
   function handleTopBarClick(key: string): void {
-    if (key === "installatie" || key === "inspection") {
+    if (key === "installatie" || key === "inspection" || key === "designer") {
       formMode.value = key;
     }
   }
@@ -144,7 +145,8 @@
     brandText="Geofleet V2 Planning"
     :leftItems="[
       { key: 'installatie', label: 'Installaties', active: formMode === 'installatie' },
-      { key: 'inspection', label: 'Nazichten', active: formMode === 'inspection' },
+      { key: 'inspection',  label: 'Nazichten',    active: formMode === 'inspection' },
+      { key: 'designer',    label: 'Designer',     active: formMode === 'designer' },
     ]"
     :rightItems="[
       { key: '', label: ' ' },
@@ -153,13 +155,18 @@
     @clickItem="handleTopBarClick" />
 
   <div class="container">
-    <div class="header">
+    <div class="header" v-if="formMode !== 'designer'">
       <h1 class="title">
         {{ formMode === "installatie" ? "Installatie template" : "Nazicht template" }}
       </h1>
     </div>
 
-    <div class="grid">
+    <!-- ── Designer (full width) ── -->
+    <div v-if="formMode === 'designer'" class="card">
+      <DesignerView />
+    </div>
+
+    <div v-else class="grid">
 
       <!-- ── Installation form ── -->
       <div v-if="formMode === 'installatie'" class="card">
