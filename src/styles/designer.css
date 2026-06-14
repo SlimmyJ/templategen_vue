@@ -123,12 +123,19 @@
 }
 .dt-color:disabled { opacity: 0.3; cursor: not-allowed; }
 
-.color-hint {
-  font-size: 10px;
-  color: #666;
+.dt-label-input {
+  width: 120px;
+  height: 24px;
+  border: 1px solid #c8c8c8;
+  border-radius: 3px;
+  padding: 0 6px;
   font-family: Verdana, Arial, sans-serif;
-  white-space: nowrap;
+  font-size: 11px;
+  color: #222;
+  background: #fff;
 }
+.dt-label-input:disabled { opacity: 0.4; cursor: not-allowed; background: #f3f3f3; }
+.dt-label-input:focus { outline: none; border-color: #357bb7; }
 
 /* Recent color swatches */
 .color-swatch {
@@ -179,6 +186,17 @@
 }
 
 .timeline-segment { cursor: pointer; }
+
+.seg-label {
+  font: 600 12px Verdana, Arial, sans-serif;
+  fill: #1a1a1a;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  cursor: pointer;
+  user-select: none;
+}
 
 /* ── Nodes ── */
 .d-node {

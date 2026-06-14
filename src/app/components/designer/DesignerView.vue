@@ -4,10 +4,8 @@
   import DesignerBoard   from "./DesignerBoard.vue";
   import { useDesignerState } from "../../composables/useDesignerState";
 
-  const { state, copySegmentColor, pasteSegmentColor, selectSegment } = useDesignerState();
+  const { state, showTimeline, copySegmentColor, pasteSegmentColor, selectSegment, undo } = useDesignerState();
   const boardRef = ref<InstanceType<typeof DesignerBoard> | null>(null);
-
-  // ── Keyboard shortcuts ─────────────────────────────────────────────────────────
 
   function onKeyDown(e: KeyboardEvent): void {
     const tag = (document.activeElement?.tagName || "").toLowerCase();
@@ -15,21 +13,21 @@
       || (document.activeElement as HTMLElement | null)?.isContentEditable;
     if (editing) return;
 
+    if (e.ctrlKey && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); return; }
     if (e.ctrlKey && e.key.toLowerCase() === "c") { copySegmentColor(); return; }
     if (e.ctrlKey && e.key.toLowerCase() === "v") { pasteSegmentColor(); return; }
-    if (e.key === "Escape")  { selectSegment(null); return; }
-    if (e.key === "z" && e.ctrlKey) { e.preventDefault(); /* undo handled by toolbar */ }
+    if (e.key === "Escape") { selectSegment(null); return; }
   }
 
   onMounted(()  => window.addEventListener("keydown", onKeyDown));
   onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
 
-  // ── Segment color status hint ─────────────────────────────────────────────────
-
   function getStatusText(): string {
     if (!state.selectedSegmentKey) return "";
-    const c = state.segments[state.selectedSegmentKey];
-    return c ? `Geselecteerd: ${c}` : "Geselecteerd — kies een kleur";
+    const color = state.segments[state.selectedSegmentKey];
+    const label = state.labels[state.selectedSegmentKey];
+    if (label) return `Segment “${label}”${color ? ` · ${color}` : ""}`;
+    return color ? `Segment · ${color} — geef het een label` : "Segment geselecteerd — kies kleur en label";
   }
 </script>
 
@@ -44,6 +42,9 @@
     <div v-if="state.selectedSegmentKey" class="segment-status">
       {{ getStatusText() }}
       <span class="segment-status-hint">Ctrl+C kopiëren · Ctrl+V plakken · Esc deselecteren</span>
+    </div>
+    <div v-else-if="showTimeline" class="segment-status segment-status--idle">
+      Klik op een lijnstuk tussen twee elementen om het in te kleuren en te benoemen.
     </div>
 
     <DesignerBoard ref="boardRef" />
@@ -64,6 +65,10 @@
   align-items: center;
   gap: 12px;
   padding: 2px 0;
+}
+
+.segment-status--idle {
+  color: #888;
 }
 
 .segment-status-hint {

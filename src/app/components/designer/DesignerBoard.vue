@@ -24,8 +24,6 @@
     loadFromJson,
   } = useDesignerState();
 
-  // ── Board dimensions ───────────────────────────────────────────────────────────
-
   const boardRef  = ref<HTMLDivElement | null>(null);
   const boardW    = ref(800);
   const boardH    = ref(520);
@@ -34,8 +32,6 @@
   const gridClass = computed(() =>
     exporting.value ? "" : `grid-${state.grid}`
   );
-
-  // ── Drag state ─────────────────────────────────────────────────────────────────
 
   type DS =
     | { kind: "node";     id: number; sx: number; sy: number; cx: number; cy: number }
@@ -100,8 +96,6 @@
     document.body.style.cursor = "";
   }
 
-  // ── Board drop (palette → canvas) ─────────────────────────────────────────────
-
   function onDrop(e: DragEvent): void {
     e.preventDefault();
     const type = e.dataTransfer?.getData("text/plain") as NodeType | undefined;
@@ -114,8 +108,6 @@
     addNode(type, x, y);
   }
 
-  // ── SVG computed helpers ───────────────────────────────────────────────────────
-
   const baselineX1 = computed(() => {
     const nodes = sortedNodes.value;
     return nodes.length > 0 ? (nodes[0] as { x: number }).x + 27 : 0;
@@ -124,8 +116,6 @@
     const nodes = sortedNodes.value;
     return nodes.length > 0 ? (nodes[nodes.length - 1] as { x: number }).x + 27 : 0;
   });
-
-  // ── Public actions (called by DesignerView) ────────────────────────────────────
 
   function doAddNote(): void {
     const x = snapVal((boardW.value - 200) / 2);
@@ -184,8 +174,6 @@
 
   defineExpose({ doAddNote, exportPng, exportJson, importJson });
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────────
-
   let ro: ResizeObserver | null = null;
 
   onMounted(() => {
@@ -220,10 +208,8 @@
     @dragover.prevent
     @drop="onDrop">
 
-    <!-- SVG overlay: timeline, segments, ticks -->
     <svg v-if="showTimeline" class="board-overlay">
 
-      <!-- Selection halo -->
       <line
         v-for="seg in segmentPairs"
         v-show="state.selectedSegmentKey === seg.key"
@@ -232,13 +218,11 @@
         :x2="seg.b.x + 27" :y2="effectiveTimelineY"
         class="seg-halo" />
 
-      <!-- Baseline (visual) -->
       <line
         :x1="baselineX1" :y1="effectiveTimelineY"
         :x2="baselineX2" :y2="effectiveTimelineY"
         stroke="#000" stroke-width="4" stroke-linecap="round" />
 
-      <!-- Baseline drag hit area (below segments in DOM → segments intercept inner clicks) -->
       <line
         :x1="baselineX1" :y1="effectiveTimelineY"
         :x2="baselineX2" :y2="effectiveTimelineY"
@@ -246,7 +230,6 @@
         style="cursor: ns-resize"
         @pointerdown="startBaselineDrag" />
 
-      <!-- Colored segments (above hit area → click for selection) -->
       <line
         v-for="seg in segmentPairs"
         :key="`seg-${seg.key}`"
@@ -257,7 +240,16 @@
         class="timeline-segment"
         @click="selectSegment(seg.key)" />
 
-      <!-- Tick marks at each node -->
+      <text
+        v-for="seg in segmentPairs"
+        v-show="seg.label"
+        :key="`label-${seg.key}`"
+        :x="(seg.a.x + seg.b.x) / 2 + 27"
+        :y="effectiveTimelineY + 24"
+        text-anchor="middle"
+        class="seg-label"
+        @click="selectSegment(seg.key)">{{ seg.label }}</text>
+
       <line
         v-for="node in sortedNodes"
         :key="`tick-${node.id}`"
@@ -267,7 +259,6 @@
 
     </svg>
 
-    <!-- Nodes -->
     <div
       v-for="node in state.nodes"
       :key="node.id"
@@ -278,7 +269,6 @@
       <button class="node-delete" title="Verwijder" @click.stop="removeNode(node.id)">×</button>
     </div>
 
-    <!-- Notes -->
     <div
       v-for="note in state.notes"
       :key="note.id"
@@ -295,7 +285,6 @@
         @change="updateNoteText(note.id, ($event.target as HTMLTextAreaElement).value)" />
     </div>
 
-    <!-- Empty state hint -->
     <div v-if="state.nodes.length === 0" class="board-hint">
       Sleep een element van de werkbalk naar het canvas
     </div>

@@ -7,6 +7,7 @@
     state,
     setGrid,
     setSegmentColor,
+    setSegmentLabel,
     commitColor,
     applyRecentColor,
     undo,
@@ -39,6 +40,10 @@
     commitColor((e.target as HTMLInputElement).value);
   }
 
+  function onLabelInput(e: Event): void {
+    setSegmentLabel((e.target as HTMLInputElement).value);
+  }
+
   function handleClear(): void {
     if (!confirm("Canvas leegmaken? Alle elementen worden verwijderd.")) return;
     clear();
@@ -55,7 +60,6 @@
 <template>
   <div class="designer-toolbar">
 
-    <!-- Palette -->
     <div class="dt-group" title="Sleep een element naar het canvas">
       <button
         v-for="type in NODE_TYPES"
@@ -70,7 +74,6 @@
 
     <div class="dt-divider"></div>
 
-    <!-- Canvas actions -->
     <div class="dt-group">
       <button class="dt-btn" title="Opmerking toevoegen" @click="$emit('add-note')">
         <i class="fa-solid fa-note-sticky"></i>
@@ -86,7 +89,6 @@
 
     <div class="dt-divider"></div>
 
-    <!-- Grid -->
     <div class="dt-group">
       <select class="dt-select" :value="state.grid" title="Rastergrootte" @change="onGridChange">
         <option value="10">10px</option>
@@ -102,7 +104,6 @@
 
     <div class="dt-divider"></div>
 
-    <!-- Segment color -->
     <div class="dt-group">
       <div class="color-zone" :class="{ 'color-zone--active': !!state.selectedSegmentKey }">
         <input
@@ -113,7 +114,14 @@
           :title="state.selectedSegmentKey ? 'Segmentkleur wijzigen (Ctrl+C kopiëren, Ctrl+V plakken)' : 'Klik eerst op een segment'"
           @input="onColorInput"
           @change="onColorChange" />
-        <span class="color-hint">{{ state.selectedSegmentKey ? "Segment" : "Klik segment" }}</span>
+        <input
+          type="text"
+          class="dt-label-input"
+          :value="state.selectedSegmentKey ? (state.labels[state.selectedSegmentKey] || '') : ''"
+          :disabled="!state.selectedSegmentKey"
+          placeholder="Label, bv. Reistijd"
+          title="Beschrijf wat dit segment voorstelt"
+          @input="onLabelInput" />
       </div>
       <button
         v-for="c in state.recentColors"
@@ -126,7 +134,6 @@
 
     <div class="dt-divider"></div>
 
-    <!-- Export / Import -->
     <div class="dt-group">
       <button class="dt-btn" title="Exporteer als PNG" @click="$emit('export-png')">
         <i class="fa-solid fa-image"></i>
