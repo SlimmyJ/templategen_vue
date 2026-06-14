@@ -102,7 +102,8 @@
     if (!type) return;
     const rect = boardRef.value!.getBoundingClientRect();
     let x = snapVal(e.clientX - rect.left - 27);
-    let y = snapVal(e.clientY - rect.top  - 27);
+    const first = state.nodes[0];
+    let y = first ? first.y : snapVal(e.clientY - rect.top - 27);
     x = Math.max(0, Math.min(boardW.value - 54, x));
     y = Math.max(0, Math.min(boardH.value - 54, y));
     addNode(type, x, y);
@@ -266,7 +267,7 @@
       :style="{ left: node.x + 'px', top: node.y + 'px' }"
       @pointerdown="startNodeDrag($event, node.id)">
       <i :class="NODE_ICON_CLASSES[node.type]"></i>
-      <button class="node-delete" title="Verwijder" @click.stop="removeNode(node.id)">×</button>
+      <button class="node-delete" title="Verwijder" @pointerdown.stop @click.stop="removeNode(node.id)">×</button>
     </div>
 
     <div
@@ -276,7 +277,7 @@
       :style="{ left: note.x + 'px', top: note.y + 'px' }">
       <div class="note-handle" @pointerdown="startNoteDrag($event, note.id)">
         <i class="fa-solid fa-grip-lines"></i>
-        <button class="note-delete" title="Verwijder nota" @click.stop="removeNote(note.id)">×</button>
+        <button class="note-delete" title="Verwijder nota" @pointerdown.stop @click.stop="removeNote(note.id)">×</button>
       </div>
       <textarea
         class="note-body"
