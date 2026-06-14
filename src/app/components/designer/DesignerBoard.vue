@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted } from "vue";
   import { useDesignerState } from "../../composables/useDesignerState";
-  import { NODE_ICON_CLASSES } from "../../models/designerModels";
+  import { NODE_ICON_CLASSES, NODE_LABELS } from "../../models/designerModels";
   import type { NodeType } from "../../models/designerModels";
 
   const {
@@ -10,15 +10,18 @@
     segmentPairs,
     effectiveTimelineY,
     showTimeline,
+    legend,
     snapVal,
     addNode,
     moveNode,
+    setNodeLabel,
     removeNode,
     addNote,
     moveNote,
     updateNoteText,
     removeNote,
     selectSegment,
+    setTitle,
     setTimelineY,
     saveAsJson,
     loadFromJson,
@@ -209,6 +212,21 @@
     @dragover.prevent
     @drop="onDrop">
 
+    <input
+      class="board-title"
+      :value="state.title"
+      :style="{ visibility: exporting && !state.title ? 'hidden' : 'visible' }"
+      placeholder="Titel van het schema…"
+      @pointerdown.stop
+      @input="setTitle(($event.target as HTMLInputElement).value)" />
+
+    <div v-if="legend.length" class="board-legend">
+      <div v-for="item in legend" :key="item.color + item.label" class="legend-item">
+        <span class="legend-swatch" :style="{ background: item.color }"></span>
+        <span>{{ item.label }}</span>
+      </div>
+    </div>
+
     <svg v-if="showTimeline" class="board-overlay">
 
       <line
@@ -266,6 +284,13 @@
       class="d-node"
       :style="{ left: node.x + 'px', top: node.y + 'px' }"
       @pointerdown="startNodeDrag($event, node.id)">
+      <input
+        class="node-label"
+        :value="node.label"
+        :style="{ visibility: exporting && !node.label ? 'hidden' : 'visible' }"
+        :placeholder="NODE_LABELS[node.type]"
+        @pointerdown.stop
+        @input="setNodeLabel(node.id, ($event.target as HTMLInputElement).value)" />
       <i :class="NODE_ICON_CLASSES[node.type]"></i>
       <button class="node-delete" title="Verwijder" @pointerdown.stop @click.stop="removeNode(node.id)">×</button>
     </div>

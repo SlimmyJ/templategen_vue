@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref } from "vue";
-  import { NODE_TYPES, NODE_ICON_CLASSES } from "../../models/designerModels";
+  import { NODE_TYPES, NODE_ICON_CLASSES, NODE_LABELS, SEGMENT_CATEGORIES } from "../../models/designerModels";
   import { useDesignerState } from "../../composables/useDesignerState";
 
   const {
@@ -8,6 +8,7 @@
     setGrid,
     setSegmentColor,
     setSegmentLabel,
+    applyCategory,
     commitColor,
     applyRecentColor,
     undo,
@@ -66,7 +67,7 @@
         :key="type"
         class="palette-btn"
         draggable="true"
-        :title="type"
+        :title="NODE_LABELS[type]"
         @dragstart="onDragStart($event, type)">
         <i :class="NODE_ICON_CLASSES[type]"></i>
       </button>
@@ -100,6 +101,21 @@
         <input type="checkbox" v-model="state.snapEnabled" />
         <span>Snap</span>
       </label>
+    </div>
+
+    <div class="dt-divider"></div>
+
+    <div class="dt-group">
+      <button
+        v-for="cat in SEGMENT_CATEGORIES"
+        :key="cat.id"
+        class="cat-chip"
+        :style="{ '--cat': cat.color }"
+        :disabled="!state.selectedSegmentKey"
+        :title="state.selectedSegmentKey ? `Markeer dit segment als ${cat.label}` : 'Klik eerst op een segment'"
+        @click="applyCategory(cat)">
+        <span class="cat-dot"></span>{{ cat.label }}
+      </button>
     </div>
 
     <div class="dt-divider"></div>

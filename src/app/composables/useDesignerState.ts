@@ -1,5 +1,5 @@
 import { reactive, computed, watch } from "vue";
-import type { DesignerNode, DesignerNote, NodeType, UndoAction } from "../models/designerModels";
+import type { DesignerNode, DesignerNote, NodeType, SegmentCategory, UndoAction } from "../models/designerModels";
 
 const RECENT_KEY = "tt_recent_colors_v1";
 const BOARD_KEY = "tt_designer_board_v1";
@@ -24,6 +24,7 @@ function saveRecent(list: string[]): void {
 }
 
 type PersistedBoard = {
+  title: string;
   nodes: DesignerNode[];
   notes: DesignerNote[];
   segments: Record<string, string>;
@@ -44,8 +45,11 @@ function loadBoard(): Partial<PersistedBoard> | null {
 
 const saved = loadBoard();
 
+const savedNodes = (saved?.nodes ?? []).map(n => ({ ...n, label: n.label ?? "" }));
+
 const state = reactive({
-  nodes:              (saved?.nodes ?? []) as DesignerNode[],
+  title:              saved?.title ?? "",
+  nodes:              savedNodes as DesignerNode[],
   notes:              (saved?.notes ?? []) as DesignerNote[],
   segments:           (saved?.segments ?? {}) as Record<string, string>,
   labels:             (saved?.labels ?? {}) as Record<string, string>,
@@ -62,9 +66,10 @@ const state = reactive({
 });
 
 watch(
-  () => [state.nodes, state.notes, state.segments, state.labels, state.timelineY, state.grid, state.snapEnabled, state.nextNodeId, state.nextNoteId],
+  () => [state.title, state.nodes, state.notes, state.segments, state.labels, state.timelineY, state.grid, state.snapEnabled, state.nextNodeId, state.nextNoteId],
   () => {
     const board: PersistedBoard = {
+      title:       state.title,
       nodes:       state.nodes,
       notes:       state.notes,
       segments:    state.segments,
@@ -111,8 +116,18 @@ const autoTimelineY = computed(() => {
 const effectiveTimelineY = computed(() => state.timelineY ?? autoTimelineY.value);
 const showTimeline       = computed(() => sortedNodes.value.length >= 2);
 
+const legend = computed(() => {
+  const seen = new Map<string, { color: string; label: string }>();
+  for (const seg of segmentPairs.value) {
+    if (!seg.label) continue;
+    const key = `${seg.color}|${seg.label}`;
+    if (!seen.has(key)) seen.set(key, { color: seg.color, label: seg.label });
+  }
+  return [...seen.values()];
+});
+
 function addNode(type: NodeType, x: number, y: number): DesignerNode {
-  const node: DesignerNode = { id: state.nextNodeId++, type, x, y };
+  const node: DesignerNode = { id: state.nextNodeId++, type, x, y, label: "" };
   state.nodes.push(node);
   state.undoStack.push({ type: "addNode", id: node.id });
   return node;
@@ -121,6 +136,11 @@ function addNode(type: NodeType, x: number, y: number): DesignerNode {
 function moveNode(id: number, x: number, y: number): void {
   const node = state.nodes.find(n => n.id === id);
   if (node) { node.x = x; node.y = y; }
+}
+
+function setNodeLabel(id: number, text: string): void {
+  const node = state.nodes.find(n => n.id === id);
+  if (node) node.label = text;
 }
 
 function forgetSegmentsTouching(id: number): void {
@@ -186,6 +206,18 @@ function setSegmentLabel(text: string): void {
   else delete state.labels[state.selectedSegmentKey];
 }
 
+function applyCategory(cat: SegmentCategory): void {
+  if (!state.selectedSegmentKey) return;
+  state.segments[state.selectedSegmentKey] = cat.color;
+  state.labels[state.selectedSegmentKey] = cat.label;
+  state.selectedColor = cat.color;
+  commitColor(cat.color);
+}
+
+function setTitle(text: string): void {
+  state.title = text;
+}
+
 function commitColor(color: string): void {
   const norm = toHex6(color);
   const list = [norm, ...state.recentColors.filter(c => c !== norm)].slice(0, 4);
@@ -236,6 +268,7 @@ function undo(): void {
 }
 
 function clear(): void {
+  state.title              = "";
   state.nodes              = [];
   state.notes              = [];
   state.segments           = {};
@@ -255,7 +288,7 @@ function saveAsJson(boardW: number, boardH: number): Record<string, unknown> {
     const fx       = boardW ? n.x / boardW : 0;
     const dy       = tY != null ? n.y - tY : null;
     const dyUnits  = dy != null ? Math.round(dy / g) : null;
-    return { id: n.id, type: n.type, x: n.x, y: n.y, fx, dy, dyUnits, order: idx, col: 0 };
+    return { id: n.id, type: n.type, label: n.label, x: n.x, y: n.y, fx, dy, dyUnits, order: idx, col: 0 };
   });
 
   const key = (v: number) => Math.round((v * 100_000) || 0);
@@ -265,6 +298,7 @@ function saveAsJson(boardW: number, boardH: number): Record<string, unknown> {
 
   return {
     version:   6,
+    title:     state.title,
     grid:      g,
     timelineY: tY,
     boardSize: { w: boardW, h: boardH },
@@ -281,6 +315,7 @@ function loadFromJson(data: unknown, boardW: number, boardH: number): void {
 
   clear();
 
+  if (typeof s.title === "string") state.title = s.title;
   if (typeof s.grid === "number") state.grid = s.grid;
   const g = state.grid;
   state.timelineY = typeof s.timelineY === "number" ? s.timelineY : null;
@@ -330,7 +365,7 @@ function loadFromJson(data: unknown, boardW: number, boardH: number): void {
 
     const id = typeof n.id === "number" ? n.id : state.nextNodeId;
     maxId = Math.max(maxId, id);
-    state.nodes.push({ id, type: n.type as NodeType, x, y });
+    state.nodes.push({ id, type: n.type as NodeType, x, y, label: typeof n.label === "string" ? n.label : "" });
   }
   state.nextNodeId = maxId + 1;
 }
@@ -342,9 +377,11 @@ export function useDesignerState() {
     segmentPairs,
     effectiveTimelineY,
     showTimeline,
+    legend,
     snapVal,
     addNode,
     moveNode,
+    setNodeLabel,
     removeNode,
     addNote,
     moveNote,
@@ -353,6 +390,8 @@ export function useDesignerState() {
     selectSegment,
     setSegmentColor,
     setSegmentLabel,
+    applyCategory,
+    setTitle,
     commitColor,
     applyRecentColor,
     copySegmentColor,
