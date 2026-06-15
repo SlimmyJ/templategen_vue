@@ -28,6 +28,8 @@ export function useCallLog() {
       outcome: draft.outcome,
       followUpDate: draft.followUpDate,
       notes: draft.notes.trim(),
+      customerId: draft.customerId,
+      installerId: draft.installerId,
       createdAt: draft.createdAt || now,
       updatedAt: now
     };

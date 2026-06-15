@@ -22,6 +22,10 @@ export type CallLogEntry = Identifiable & {
   /** Optional follow-up date as a `date` string (`yyyy-MM-dd`) or "". */
   followUpDate: string;
   notes: string;
+  /** Optional links to shared entities; "" when not linked. The text fields above
+   *  remain a snapshot of who was called at that moment. */
+  customerId: string;
+  installerId: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -37,6 +41,8 @@ export type CallLogDraft = {
   outcome: CallOutcome;
   followUpDate: string;
   notes: string;
+  customerId: string;
+  installerId: string;
   createdAt: string;
 };
 
@@ -72,6 +78,8 @@ export function createCallLogDraft(): CallLogDraft {
     outcome: "reached",
     followUpDate: "",
     notes: "",
+    customerId: "",
+    installerId: "",
     createdAt: ""
   };
 }
@@ -87,6 +95,8 @@ export function toDraft(entry: CallLogEntry): CallLogDraft {
     outcome: entry.outcome,
     followUpDate: entry.followUpDate,
     notes: entry.notes,
+    customerId: entry.customerId,
+    installerId: entry.installerId,
     createdAt: entry.createdAt
   };
 }
