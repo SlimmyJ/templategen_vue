@@ -1,7 +1,6 @@
 import { createDefaultInspectionRequest, type InspectionRequest } from "../models/inspectionModels";
-import type { IInspectionRequestRepository } from "../repositories/interfaces/IInspectionRequestRepository";
-import { useLanguageDefaults, type LanguageDefaultBinding } from "./useLanguageDefaults";
-import { usePersistentDraft } from "./usePersistentDraft";
+import type { LanguageDefaultBinding } from "../composables/useLanguageDefaults";
+import type { RequestModuleConfig } from "./requestModule";
 
 const languageDefaults: ReadonlyArray<LanguageDefaultBinding<InspectionRequest>> = [
   {
@@ -35,9 +34,8 @@ const languageDefaults: ReadonlyArray<LanguageDefaultBinding<InspectionRequest>>
   }
 ];
 
-export function useInspectionRequest(repository: IInspectionRequestRepository) {
-  const { request, resetDraft } = usePersistentDraft(repository, createDefaultInspectionRequest);
-  useLanguageDefaults(request, languageDefaults);
-
-  return { request, reset: resetDraft };
-}
+export const inspectionModule: RequestModuleConfig<InspectionRequest> = {
+  storageKey: "templategen.inspectionRequest.v1",
+  createDefaults: createDefaultInspectionRequest,
+  languageDefaults
+};

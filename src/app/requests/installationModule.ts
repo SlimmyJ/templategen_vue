@@ -1,7 +1,6 @@
 import { createDefaultRequest, type InstallationRequest } from "../models/installationModels";
-import type { IInstallationRequestRepository } from "../repositories/interfaces/IInstallationRequestRepository";
-import { useLanguageDefaults, type LanguageDefaultBinding } from "./useLanguageDefaults";
-import { usePersistentDraft } from "./usePersistentDraft";
+import type { LanguageDefaultBinding } from "../composables/useLanguageDefaults";
+import type { RequestModuleConfig } from "./requestModule";
 
 const languageDefaults: ReadonlyArray<LanguageDefaultBinding<InstallationRequest>> = [
   {
@@ -48,9 +47,8 @@ const languageDefaults: ReadonlyArray<LanguageDefaultBinding<InstallationRequest
   }
 ];
 
-export function useInstallationRequest(repository: IInstallationRequestRepository) {
-  const { request, resetDraft } = usePersistentDraft(repository, createDefaultRequest);
-  useLanguageDefaults(request, languageDefaults);
-
-  return { request, reset: resetDraft };
-}
+export const installationModule: RequestModuleConfig<InstallationRequest> = {
+  storageKey: "templategen.installationRequest.v2",
+  createDefaults: createDefaultRequest,
+  languageDefaults
+};

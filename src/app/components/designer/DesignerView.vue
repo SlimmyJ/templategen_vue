@@ -32,8 +32,9 @@
 </script>
 
 <template>
-  <div class="designer-view">
-    <DesignerToolbar
+  <div class="card">
+    <div class="designer-view">
+      <DesignerToolbar
       @add-note="boardRef?.doAddNote()"
       @export-png="boardRef?.exportPng()"
       @export-json="boardRef?.exportJson()"
@@ -48,6 +49,7 @@
     </div>
 
     <DesignerBoard ref="boardRef" />
+    </div>
   </div>
 </template>
 
