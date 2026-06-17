@@ -4,7 +4,16 @@
   import DesignerBoard   from "./DesignerBoard.vue";
   import { useDesignerState } from "../../composables/useDesignerState";
 
-  const { state, showTimeline, copySegmentColor, pasteSegmentColor, selectSegment, undo } = useDesignerState();
+  const {
+    state,
+    showTimeline,
+    copySegmentColor,
+    pasteSegmentColor,
+    clearSegment,
+    selectSegment,
+    undo,
+    redo,
+  } = useDesignerState();
   const boardRef = ref<InstanceType<typeof DesignerBoard> | null>(null);
 
   function onKeyDown(e: KeyboardEvent): void {
@@ -13,9 +22,12 @@
       || (document.activeElement as HTMLElement | null)?.isContentEditable;
     if (editing) return;
 
-    if (e.ctrlKey && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); return; }
-    if (e.ctrlKey && e.key.toLowerCase() === "c") { copySegmentColor(); return; }
-    if (e.ctrlKey && e.key.toLowerCase() === "v") { pasteSegmentColor(); return; }
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
+    if (ctrl && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) { e.preventDefault(); redo(); return; }
+    if ((e.key === "Delete" || e.key === "Backspace") && state.selectedSegmentKey) { e.preventDefault(); clearSegment(); return; }
+    if (ctrl && e.key.toLowerCase() === "c") { copySegmentColor(); return; }
+    if (ctrl && e.key.toLowerCase() === "v") { pasteSegmentColor(); return; }
     if (e.key === "Escape") { selectSegment(null); return; }
   }
 
@@ -35,20 +47,20 @@
   <div class="card">
     <div class="designer-view">
       <DesignerToolbar
-      @add-note="boardRef?.doAddNote()"
-      @export-png="boardRef?.exportPng()"
-      @export-json="boardRef?.exportJson()"
-      @import-json="boardRef?.importJson($event)" />
+        @add-note="boardRef?.doAddNote()"
+        @export-png="boardRef?.exportPng()"
+        @export-json="boardRef?.exportJson()"
+        @import-json="boardRef?.importJson($event)" />
 
-    <div v-if="state.selectedSegmentKey" class="segment-status">
-      {{ getStatusText() }}
-      <span class="segment-status-hint">Ctrl+C kopiëren · Ctrl+V plakken · Esc deselecteren</span>
-    </div>
-    <div v-else-if="showTimeline" class="segment-status segment-status--idle">
-      Klik op een lijnstuk tussen twee elementen om het in te kleuren en te benoemen.
-    </div>
+      <div v-if="state.selectedSegmentKey" class="segment-status">
+        {{ getStatusText() }}
+        <span class="segment-status-hint">Ctrl+C/V kleur · Del wissen · Esc sluiten</span>
+      </div>
+      <div v-else-if="showTimeline" class="segment-status segment-status--idle">
+        Klik op een lijnstuk tussen twee elementen om het in te kleuren en te benoemen.
+      </div>
 
-    <DesignerBoard ref="boardRef" />
+      <DesignerBoard ref="boardRef" />
     </div>
   </div>
 </template>

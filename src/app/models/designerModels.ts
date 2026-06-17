@@ -44,7 +44,3 @@ export const SEGMENT_CATEGORIES: SegmentCategory[] = [
   { id: "mobiliteit", label: "Mobiliteit", color: "#2f6db3" },
   { id: "prive",      label: "Privé",      color: "#98a0a8" },
 ];
-
-export type UndoAction =
-  | { type: "addNode"; id: number }
-  | { type: "addNote"; id: number };

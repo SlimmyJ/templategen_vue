@@ -23,6 +23,8 @@
     selectSegment,
     setTitle,
     setTimelineY,
+    beginHistory,
+    commitHistory,
     saveAsJson,
     loadFromJson,
   } = useDesignerState();
@@ -31,6 +33,7 @@
   const boardW    = ref(800);
   const boardH    = ref(520);
   const exporting = ref(false);
+  const dragOver  = ref(false);
 
   const gridClass = computed(() =>
     exporting.value ? "" : `grid-${state.grid}`
@@ -41,7 +44,7 @@
     | { kind: "baseline";            sy: number;              cx: number; cy: number }
     | { kind: "note";     id: number; sx: number; sy: number; cx: number; cy: number };
 
-  const drag = ref<DS | null>(null);
+  const drag = ref<(DS & { recorded?: boolean }) | null>(null);
 
   function startNodeDrag(e: PointerEvent, nodeId: number): void {
     if (e.button !== 0) return;
@@ -71,6 +74,13 @@
     const d = drag.value;
     if (!d) return;
 
+    // Record the pre-drag state on the first real movement only, so a plain
+    // click never creates an empty undo step.
+    if (!d.recorded) {
+      beginHistory();
+      d.recorded = true;
+    }
+
     const dx = e.clientX - d.cx;
     const dy = e.clientY - d.cy;
 
@@ -90,17 +100,28 @@
     } else if (d.kind === "note") {
       let nx = snapVal(d.sx + dx);
       let ny = snapVal(d.sy + dy);
+      nx = Math.max(0, Math.min(boardW.value - 40, nx));
+      ny = Math.max(0, Math.min(boardH.value - 30, ny));
       moveNote(d.id, nx, ny);
     }
   }
 
   function onPointerUp(): void {
+    if (drag.value) commitHistory();
     drag.value = null;
     document.body.style.cursor = "";
   }
 
+  function onDragLeave(e: DragEvent): void {
+    const related = e.relatedTarget as Node | null;
+    if (!boardRef.value || !related || !boardRef.value.contains(related)) {
+      dragOver.value = false;
+    }
+  }
+
   function onDrop(e: DragEvent): void {
     e.preventDefault();
+    dragOver.value = false;
     const type = e.dataTransfer?.getData("text/plain") as NodeType | undefined;
     if (!type) return;
     const rect = boardRef.value!.getBoundingClientRect();
@@ -208,8 +229,9 @@
   <div
     ref="boardRef"
     class="designer-board"
-    :class="gridClass"
-    @dragover.prevent
+    :class="[gridClass, { 'drag-over': dragOver }]"
+    @dragover.prevent="dragOver = true"
+    @dragleave="onDragLeave"
     @drop="onDrop">
 
     <input
@@ -218,6 +240,8 @@
       :style="{ visibility: exporting && !state.title ? 'hidden' : 'visible' }"
       placeholder="Titel van het schema…"
       @pointerdown.stop
+      @focus="beginHistory()"
+      @blur="commitHistory()"
       @input="setTitle(($event.target as HTMLInputElement).value)" />
 
     <div v-if="legend.length" class="board-legend">
@@ -290,6 +314,8 @@
         :style="{ visibility: exporting && !node.label ? 'hidden' : 'visible' }"
         :placeholder="NODE_LABELS[node.type]"
         @pointerdown.stop
+        @focus="beginHistory()"
+        @blur="commitHistory()"
         @input="setNodeLabel(node.id, ($event.target as HTMLInputElement).value)" />
       <i :class="NODE_ICON_CLASSES[node.type]"></i>
       <button class="node-delete" title="Verwijder" @pointerdown.stop @click.stop="removeNode(node.id)">×</button>
@@ -308,7 +334,9 @@
         class="note-body"
         :value="note.text"
         rows="2"
-        @change="updateNoteText(note.id, ($event.target as HTMLTextAreaElement).value)" />
+        @focus="beginHistory()"
+        @blur="commitHistory()"
+        @input="updateNoteText(note.id, ($event.target as HTMLTextAreaElement).value)" />
     </div>
 
     <div v-if="state.nodes.length === 0" class="board-hint">

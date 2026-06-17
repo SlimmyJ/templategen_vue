@@ -8,10 +8,16 @@
     setGrid,
     setSegmentColor,
     setSegmentLabel,
+    clearSegment,
     applyCategory,
     commitColor,
     applyRecentColor,
+    beginHistory,
+    commitHistory,
     undo,
+    redo,
+    canUndo,
+    canRedo,
     clear,
   } = useDesignerState();
 
@@ -39,6 +45,7 @@
 
   function onColorChange(e: Event): void {
     commitColor((e.target as HTMLInputElement).value);
+    commitHistory();
   }
 
   function onLabelInput(e: Event): void {
@@ -80,8 +87,11 @@
         <i class="fa-solid fa-note-sticky"></i>
         <span class="dt-label">Nota</span>
       </button>
-      <button class="dt-btn" title="Ongedaan maken (laatste toevoeging)" @click="undo">
+      <button class="dt-btn" title="Ongedaan maken (Ctrl+Z)" :disabled="!canUndo" @click="undo">
         <i class="fa-solid fa-rotate-left"></i>
+      </button>
+      <button class="dt-btn" title="Opnieuw (Ctrl+Y)" :disabled="!canRedo" @click="redo">
+        <i class="fa-solid fa-rotate-right"></i>
       </button>
       <button class="dt-btn dt-btn--danger" title="Canvas leegmaken" @click="handleClear">
         <i class="fa-solid fa-trash-can"></i>
@@ -128,6 +138,7 @@
           :value="state.selectedColor"
           :disabled="!state.selectedSegmentKey"
           :title="state.selectedSegmentKey ? 'Segmentkleur wijzigen (Ctrl+C kopiëren, Ctrl+V plakken)' : 'Klik eerst op een segment'"
+          @pointerdown="beginHistory()"
           @input="onColorInput"
           @change="onColorChange" />
         <input
@@ -137,7 +148,17 @@
           :disabled="!state.selectedSegmentKey"
           placeholder="Label, bv. Reistijd"
           title="Beschrijf wat dit segment voorstelt"
+          @focus="beginHistory()"
+          @blur="commitHistory()"
           @input="onLabelInput" />
+        <button
+          type="button"
+          class="seg-clear"
+          :disabled="!state.selectedSegmentKey"
+          title="Segment wissen (kleur en label)"
+          @click="clearSegment">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
       <button
         v-for="c in state.recentColors"

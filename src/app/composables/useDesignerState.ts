@@ -1,5 +1,5 @@
 import { reactive, computed, watch } from "vue";
-import type { DesignerNode, DesignerNote, NodeType, SegmentCategory, UndoAction } from "../models/designerModels";
+import type { DesignerNode, DesignerNote, NodeType, SegmentCategory } from "../models/designerModels";
 
 const RECENT_KEY = "tt_recent_colors_v1";
 const BOARD_KEY = "tt_designer_board_v1";
@@ -62,8 +62,70 @@ const state = reactive({
   colorClipboard:     null as string | null,
   nextNodeId:         saved?.nextNodeId ?? 1,
   nextNoteId:         saved?.nextNoteId ?? 1,
-  undoStack:          [] as UndoAction[],
 });
+
+// ── History (snapshot-based undo/redo) ─────────────────────────────────────────
+// A snapshot is a JSON string of the document-relevant state. Discrete actions
+// wrap themselves in beginHistory()/commitHistory(); continuous interactions
+// (drags, typing) are bracketed by the components. commitHistory() only records
+// when something actually changed, so there are never empty undo steps.
+type HistorySnapshot = string;
+const history = reactive({ past: [] as HistorySnapshot[], future: [] as HistorySnapshot[] });
+let pending: HistorySnapshot | null = null;
+const HISTORY_LIMIT = 100;
+
+function snapshot(): HistorySnapshot {
+  return JSON.stringify({
+    title:      state.title,
+    nodes:      state.nodes,
+    notes:      state.notes,
+    segments:   state.segments,
+    labels:     state.labels,
+    timelineY:  state.timelineY,
+    grid:       state.grid,
+    nextNodeId: state.nextNodeId,
+    nextNoteId: state.nextNoteId,
+  });
+}
+
+function restoreSnapshot(snap: HistorySnapshot): void {
+  const s = JSON.parse(snap) as {
+    title?: string;
+    nodes?: DesignerNode[];
+    notes?: DesignerNote[];
+    segments?: Record<string, string>;
+    labels?: Record<string, string>;
+    timelineY?: number | null;
+    grid?: number;
+    nextNodeId?: number;
+    nextNoteId?: number;
+  };
+  state.title              = s.title ?? "";
+  state.nodes              = s.nodes ?? [];
+  state.notes              = s.notes ?? [];
+  state.segments           = s.segments ?? {};
+  state.labels             = s.labels ?? {};
+  state.timelineY          = s.timelineY ?? null;
+  state.grid               = s.grid ?? 20;
+  state.nextNodeId         = s.nextNodeId ?? 1;
+  state.nextNoteId         = s.nextNoteId ?? 1;
+  state.selectedSegmentKey = null;
+}
+
+/** Capture the state before a discrete change or the start of an interaction. */
+function beginHistory(): void {
+  pending = snapshot();
+}
+
+/** Record the captured state on the undo stack, but only if it actually changed. */
+function commitHistory(): void {
+  if (pending !== null && pending !== snapshot()) {
+    history.past.push(pending);
+    if (history.past.length > HISTORY_LIMIT) history.past.shift();
+    history.future = [];
+  }
+  pending = null;
+}
 
 watch(
   () => [state.title, state.nodes, state.notes, state.segments, state.labels, state.timelineY, state.grid, state.snapEnabled, state.nextNodeId, state.nextNoteId],
@@ -127,9 +189,10 @@ const legend = computed(() => {
 });
 
 function addNode(type: NodeType, x: number, y: number): DesignerNode {
+  beginHistory();
   const node: DesignerNode = { id: state.nextNodeId++, type, x, y, label: "" };
   state.nodes.push(node);
-  state.undoStack.push({ type: "addNode", id: node.id });
+  commitHistory();
   return node;
 }
 
@@ -155,6 +218,7 @@ function forgetSegmentsTouching(id: number): void {
 }
 
 function removeNode(id: number): void {
+  beginHistory();
   state.nodes = state.nodes.filter(n => n.id !== id);
   forgetSegmentsTouching(id);
   if (state.selectedSegmentKey) {
@@ -162,12 +226,14 @@ function removeNode(id: number): void {
     if (l === id || r === id) state.selectedSegmentKey = null;
   }
   if (state.nodes.length < 2) state.timelineY = null;
+  commitHistory();
 }
 
 function addNote(x: number, y: number): DesignerNote {
+  beginHistory();
   const note: DesignerNote = { id: state.nextNoteId++, x, y, text: "Opmerking…" };
   state.notes.push(note);
-  state.undoStack.push({ type: "addNote", id: note.id });
+  commitHistory();
   return note;
 }
 
@@ -182,7 +248,9 @@ function updateNoteText(id: number, text: string): void {
 }
 
 function removeNote(id: number): void {
+  beginHistory();
   state.notes = state.notes.filter(n => n.id !== id);
+  commitHistory();
 }
 
 function selectSegment(key: string | null): void {
@@ -206,12 +274,24 @@ function setSegmentLabel(text: string): void {
   else delete state.labels[state.selectedSegmentKey];
 }
 
+/** Remove the colour and label of the selected segment (back to the default line). */
+function clearSegment(): void {
+  const key = state.selectedSegmentKey;
+  if (!key) return;
+  beginHistory();
+  delete state.segments[key];
+  delete state.labels[key];
+  commitHistory();
+}
+
 function applyCategory(cat: SegmentCategory): void {
   if (!state.selectedSegmentKey) return;
+  beginHistory();
   state.segments[state.selectedSegmentKey] = cat.color;
   state.labels[state.selectedSegmentKey] = cat.label;
   state.selectedColor = cat.color;
   commitColor(cat.color);
+  commitHistory();
 }
 
 function setTitle(text: string): void {
@@ -226,9 +306,11 @@ function commitColor(color: string): void {
 }
 
 function applyRecentColor(color: string): void {
+  beginHistory();
   state.selectedColor = color;
   if (state.selectedSegmentKey) state.segments[state.selectedSegmentKey] = color;
   commitColor(color);
+  commitHistory();
 }
 
 function copySegmentColor(): void {
@@ -239,9 +321,11 @@ function copySegmentColor(): void {
 
 function pasteSegmentColor(): void {
   if (!state.selectedSegmentKey || !state.colorClipboard) return;
+  beginHistory();
   state.segments[state.selectedSegmentKey] = state.colorClipboard;
   state.selectedColor = state.colorClipboard;
   commitColor(state.colorClipboard);
+  commitHistory();
 }
 
 function setTimelineY(y: number | null): void {
@@ -249,25 +333,32 @@ function setTimelineY(y: number | null): void {
 }
 
 function setGrid(v: number): void {
+  beginHistory();
   state.grid = v;
+  commitHistory();
 }
 
 function undo(): void {
-  for (;;) {
-    const action = state.undoStack.pop();
-    if (!action) return;
-    if (action.type === "addNode" && state.nodes.some(n => n.id === action.id)) {
-      removeNode(action.id);
-      return;
-    }
-    if (action.type === "addNote" && state.notes.some(n => n.id === action.id)) {
-      state.notes = state.notes.filter(n => n.id !== action.id);
-      return;
-    }
-  }
+  pending = null;
+  const prev = history.past.pop();
+  if (prev === undefined) return;
+  history.future.push(snapshot());
+  restoreSnapshot(prev);
 }
 
+function redo(): void {
+  pending = null;
+  const next = history.future.pop();
+  if (next === undefined) return;
+  history.past.push(snapshot());
+  restoreSnapshot(next);
+}
+
+const canUndo = computed(() => history.past.length > 0);
+const canRedo = computed(() => history.future.length > 0);
+
 function clear(): void {
+  beginHistory();
   state.title              = "";
   state.nodes              = [];
   state.notes              = [];
@@ -275,9 +366,9 @@ function clear(): void {
   state.labels             = {};
   state.timelineY          = null;
   state.selectedSegmentKey = null;
-  state.undoStack          = [];
   state.nextNodeId         = 1;
   state.nextNoteId         = 1;
+  commitHistory();
 }
 
 function saveAsJson(boardW: number, boardH: number): Record<string, unknown> {
@@ -390,6 +481,7 @@ export function useDesignerState() {
     selectSegment,
     setSegmentColor,
     setSegmentLabel,
+    clearSegment,
     applyCategory,
     setTitle,
     commitColor,
@@ -398,7 +490,12 @@ export function useDesignerState() {
     pasteSegmentColor,
     setTimelineY,
     setGrid,
+    beginHistory,
+    commitHistory,
     undo,
+    redo,
+    canUndo,
+    canRedo,
     clear,
     saveAsJson,
     loadFromJson,
