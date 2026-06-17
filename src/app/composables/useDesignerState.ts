@@ -20,7 +20,7 @@ function loadRecent(): string[] {
 }
 
 function saveRecent(list: string[]): void {
-  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 4))); } catch { /* ignore */ }
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 4))); } catch {}
 }
 
 type PersistedBoard = {
@@ -64,11 +64,6 @@ const state = reactive({
   nextNoteId:         saved?.nextNoteId ?? 1,
 });
 
-// ── History (snapshot-based undo/redo) ─────────────────────────────────────────
-// A snapshot is a JSON string of the document-relevant state. Discrete actions
-// wrap themselves in beginHistory()/commitHistory(); continuous interactions
-// (drags, typing) are bracketed by the components. commitHistory() only records
-// when something actually changed, so there are never empty undo steps.
 type HistorySnapshot = string;
 const history = reactive({ past: [] as HistorySnapshot[], future: [] as HistorySnapshot[] });
 let pending: HistorySnapshot | null = null;
@@ -112,12 +107,10 @@ function restoreSnapshot(snap: HistorySnapshot): void {
   state.selectedSegmentKey = null;
 }
 
-/** Capture the state before a discrete change or the start of an interaction. */
 function beginHistory(): void {
   pending = snapshot();
 }
 
-/** Record the captured state on the undo stack, but only if it actually changed. */
 function commitHistory(): void {
   if (pending !== null && pending !== snapshot()) {
     history.past.push(pending);
@@ -142,7 +135,7 @@ watch(
       nextNodeId:  state.nextNodeId,
       nextNoteId:  state.nextNoteId,
     };
-    try { localStorage.setItem(BOARD_KEY, JSON.stringify(board)); } catch { /* ignore */ }
+    try { localStorage.setItem(BOARD_KEY, JSON.stringify(board)); } catch {}
   },
   { deep: true }
 );
@@ -274,7 +267,6 @@ function setSegmentLabel(text: string): void {
   else delete state.labels[state.selectedSegmentKey];
 }
 
-/** Remove the colour and label of the selected segment (back to the default line). */
 function clearSegment(): void {
   const key = state.selectedSegmentKey;
   if (!key) return;

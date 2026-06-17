@@ -106,7 +106,6 @@ export function outcomeLabel(value: CallOutcome): string {
   return CALL_OUTCOMES.find((o) => o.value === value)?.label ?? value;
 }
 
-/** "yyyy-MM-ddTHH:mm" → "dd/MM/yyyy HH:mm" (no timezone math). */
 export function formatCallMoment(at: string): string {
   const [datePart, timePart] = at.split("T");
   const [y, m, d] = (datePart ?? "").split("-");

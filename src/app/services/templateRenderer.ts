@@ -74,7 +74,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return subject;
   }
 
-  // ── Installation email ─────────────────────────────────────────────────────
+  
 
   private buildInstallerHtml(r: InstallationRequest): string {
     const tr = this.t(r.language);
@@ -100,7 +100,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html.join("").trim();
   }
 
-  // ── Calendar snippet (installer email without greeting/intro/ending) ───────
+  
 
   private buildInstallerCalendarHtml(r: InstallationRequest): string {
     const tr = this.t(r.language);
@@ -113,11 +113,11 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html.join("").trim();
   }
 
-  /** Planning, details, vehicles, place and contact — shared by the installer email and the calendar snippet. */
+  
   private buildInstallationBodyHtml(r: InstallationRequest, tr: Tr, color: string): string[] {
     const html: string[] = [];
 
-    // planning note shows on installer mail even when date/time are filled
+    
     html.push(...this.buildPlanningSectionHtml(
       r.planning.plannedDate.trim(),
       r.planning.plannedTime.trim(),
@@ -150,7 +150,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html;
   }
 
-  // ── Customer email ─────────────────────────────────────────────────────────
+  
 
   private buildCustomerHtml(r: InstallationRequest, installer: InstallerInfo): string {
     const tr = this.t(r.language);
@@ -209,7 +209,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html.join("").trim();
   }
 
-  // ── Inspection email ───────────────────────────────────────────────────────
+  
 
   private buildInspectionHtml(r: InspectionRequest): string {
     const tr = this.t(r.language);
@@ -300,7 +300,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return html;
   }
 
-  // ── Shared section builders ────────────────────────────────────────────────
+  
 
   private buildGreeting(
     intro: { salutationPrefix: string; salutationName: string },
@@ -398,7 +398,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     return this.e(tr.installer);
   }
 
-  // ── Vehicle table ──────────────────────────────────────────────────────────
+  
 
   private buildVehicleHtml(r: InstallationRequest, tr: Tr): string {
     const pastedHtml = r.vehicleTable.html.trim();
@@ -498,7 +498,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     }
   }
 
-  // ── Shared HTML helpers ────────────────────────────────────────────────────
+  
 
   private sectionTitle(title: string, color: string): string {
     return `
@@ -544,7 +544,7 @@ export class TemplateRenderer implements ITemplateRenderer {
       .split('"').join("&quot;");
   }
 
-  // ── Translations ───────────────────────────────────────────────────────────
+  
 
   private t(lang: "nl" | "fr") {
     const fr = lang === "fr";

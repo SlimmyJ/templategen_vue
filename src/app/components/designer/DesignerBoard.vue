@@ -74,8 +74,6 @@
     const d = drag.value;
     if (!d) return;
 
-    // Record the pre-drag state on the first real movement only, so a plain
-    // click never creates an empty undo step.
     if (!d.recorded) {
       beginHistory();
       d.recorded = true;
