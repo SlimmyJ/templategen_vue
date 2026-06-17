@@ -1,10 +1,5 @@
 import type { Identifiable, ICollectionRepository } from "../interfaces/ICollectionRepository";
 
-/**
- * Generic localStorage-backed collection repository. Generalizes the original
- * hand-rolled InstallerStore so any identifiable record type (call-log entries,
- * installers, …) gets the same CRUD + seed behaviour for free.
- */
 export class LocalCollectionRepository<T extends Identifiable> implements ICollectionRepository<T> {
   private readonly storageKey: string;
 
@@ -53,7 +48,7 @@ export class LocalCollectionRepository<T extends Identifiable> implements IColle
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(items));
     } catch {
-      // Storage full or unavailable; the caller's in-memory list stays correct.
+
     }
   }
 }

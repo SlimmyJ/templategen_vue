@@ -2,6 +2,9 @@
   import { ref } from "vue";
   import { NODE_TYPES, NODE_ICON_CLASSES, NODE_LABELS, SEGMENT_CATEGORIES } from "../../models/designerModels";
   import { useDesignerState } from "../../composables/useDesignerState";
+  import { useConfirm } from "../../composables/useConfirm";
+
+  const { confirm } = useConfirm();
 
   const {
     state,
@@ -52,8 +55,12 @@
     setSegmentLabel((e.target as HTMLInputElement).value);
   }
 
-  function handleClear(): void {
-    if (!confirm("Canvas leegmaken? Alle elementen worden verwijderd.")) return;
+  async function handleClear(): Promise<void> {
+    const ok = await confirm("Canvas leegmaken? Alle elementen worden verwijderd.", {
+      confirmLabel: "Leegmaken",
+      danger: true
+    });
+    if (!ok) return;
     clear();
   }
 

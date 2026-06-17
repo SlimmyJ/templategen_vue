@@ -18,7 +18,7 @@ type Ti = ReturnType<TemplateRenderer["tInspection"]>;
 
 export class TemplateRenderer implements ITemplateRenderer {
 
-  // ── Public entry points ────────────────────────────────────────────────────
+  
 
   public renderInstallerEmail(request: InstallationRequest): TemplateResult {
     return {
@@ -48,7 +48,7 @@ export class TemplateRenderer implements ITemplateRenderer {
     };
   }
 
-  // ── Subject builders ───────────────────────────────────────────────────────
+  
 
   private buildInstallerSubject(r: InstallationRequest): string {
     const tr = this.t(r.language);

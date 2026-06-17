@@ -2,18 +2,12 @@ import { watch } from "vue";
 import type { AppLanguage } from "../models/sharedModels";
 
 export type LanguageDefaultBinding<TRequest> = {
-  /** Default text per language. */
+
   defaults: Record<AppLanguage, string>;
   get(request: TRequest): string;
   set(request: TRequest, value: string): void;
 };
 
-/**
- * Keeps language-dependent default texts in sync with the selected language.
- * On a language switch a field is only overwritten when it is empty or still
- * holds one of the known defaults; manual edits are always preserved — also
- * across reloads and when switching back and forth between languages.
- */
 export function useLanguageDefaults<TRequest extends { language: AppLanguage }>(
   request: TRequest,
   bindings: ReadonlyArray<LanguageDefaultBinding<TRequest>>

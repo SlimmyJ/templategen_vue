@@ -1,11 +1,7 @@
 import type { IDraftRepository } from "../interfaces/IDraftRepository";
 import { mergeDefaults } from "../../utils/mergeDefaults";
 
-/**
- * Generic localStorage-backed draft repository. Stored drafts are merged onto
- * fresh defaults on load, so drafts saved by an older model version keep
- * working after new fields are added.
- */
+
 export class LocalDraftRepository<T> implements IDraftRepository<T> {
   private readonly storageKey: string;
   private readonly createDefaults: () => T;
@@ -29,7 +25,7 @@ export class LocalDraftRepository<T> implements IDraftRepository<T> {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(request));
     } catch {
-      // Storage full or unavailable; losing the autosave is acceptable.
+      
     }
   }
 
@@ -37,7 +33,7 @@ export class LocalDraftRepository<T> implements IDraftRepository<T> {
     try {
       localStorage.removeItem(this.storageKey);
     } catch {
-      // Nothing to clear when storage is unavailable.
+      
     }
   }
 }

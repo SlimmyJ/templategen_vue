@@ -1,6 +1,7 @@
 import { computed, reactive, ref, watch } from "vue";
 import type { InstallerInfo, InstallerSelection } from "../models/installationModels";
 import { InstallerStore, type InstallerRecord } from "../services/installerStore";
+import { useConfirm } from "./useConfirm";
 
 type InstallerCatalogTarget = {
   installerSelection: InstallerSelection;
@@ -26,8 +27,8 @@ const defaultSeed: InstallerRecord[] = [
   { id: "12", companyName: "Javaco",                 contactPerson: "Niko Gijs",            email: "",                     gsm: ""                 }
 ];
 
-// Module-level so every catalog instance (installation + inspection form)
-// shares the same store and sees each other's edits immediately.
+
+
 const installerStore = new InstallerStore();
 const installers = ref<InstallerRecord[]>([]);
 let initialized = false;
@@ -51,6 +52,8 @@ function ensureInitialized(): void {
 
 export function useInstallerCatalog(request: InstallerCatalogTarget) {
   ensureInitialized();
+
+  const { confirm } = useConfirm();
 
   const installerSearch = ref<string>("");
   const installerOpen = ref<boolean>(false);
@@ -163,12 +166,16 @@ export function useInstallerCatalog(request: InstallerCatalogTarget) {
     installerSearch.value = installerEdit.companyName.trim();
   }
 
-  function deleteSelectedInstaller(): void {
+  async function deleteSelectedInstaller(): Promise<void> {
     const sel = selectedInstaller.value;
     if (!sel) return;
 
     const name = sel.companyName.trim() || "deze installateur";
-    if (!window.confirm(`Bent u zeker dat u ${name} wil verwijderen?`)) return;
+    const ok = await confirm(`Bent u zeker dat u ${name} wil verwijderen?`, {
+      confirmLabel: "Verwijderen",
+      danger: true
+    });
+    if (!ok) return;
 
     installerStore.remove(sel.id);
     reloadInstallers();

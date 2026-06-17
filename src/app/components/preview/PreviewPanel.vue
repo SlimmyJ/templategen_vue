@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useConfirm } from "../../composables/useConfirm";
 
 type PreviewTab = "installer" | "customer";
 type CopiedBtn = "installer" | "customer" | "calendar" | "subject" | null;
@@ -11,15 +12,19 @@ const props = withDefaults(defineProps<{
   installerSubject?: string;
   customerSubject?: string;
   status: string;
+  warnings?: string[];
   showCustomerTab?: boolean;
   showCalendarCopy?: boolean;
 }>(), {
   customerHtml: "",
   installerSubject: "",
   customerSubject: "",
+  warnings: () => [],
   showCustomerTab: true,
   showCalendarCopy: true
 });
+
+const { confirm } = useConfirm();
 
 const emit = defineEmits<{
   "update:activeTab": [value: PreviewTab];
@@ -59,11 +64,15 @@ async function handleCopySubject(): Promise<void> {
   try {
     await navigator.clipboard.writeText(subject);
     flashCopied("subject");
-  } catch { /* clipboard unavailable */ }
+  } catch {  }
 }
 
-function handleReset(): void {
-  if (!confirm("Formulier resetten? Alle ingevulde gegevens gaan verloren.")) return;
+async function handleReset(): Promise<void> {
+  const ok = await confirm("Formulier resetten? Alle ingevulde gegevens gaan verloren.", {
+    confirmLabel: "Resetten",
+    danger: true
+  });
+  if (!ok) return;
   emit("reset");
 }
 </script>
@@ -99,6 +108,16 @@ function handleReset(): void {
           {{ copied === "subject" ? "✓" : "⎘" }}
         </button>
       </div>
+    </div>
+
+    <div class="checklist" :class="{ 'checklist--ok': warnings.length === 0 }">
+      <template v-if="warnings.length">
+        <strong>Nog te controleren:</strong>
+        <ul>
+          <li v-for="item in warnings" :key="item">{{ item }}</li>
+        </ul>
+      </template>
+      <span v-else>✓ Klaar om te kopiëren</span>
     </div>
 
     <div class="actions">
@@ -172,5 +191,26 @@ button.primary.done {
   background: #2a9d5c !important;
   border-color: #228a4e !important;
   color: #fff !important;
+}
+
+.checklist {
+  margin-top: 12px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #8a6d00;
+  background: #fff8e6;
+  border: 1px solid #f0e0b0;
+  border-radius: 3px;
+}
+
+.checklist ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.checklist--ok {
+  color: #1d7a43;
+  background: #eaf7ef;
+  border-color: #c2e6d0;
 }
 </style>

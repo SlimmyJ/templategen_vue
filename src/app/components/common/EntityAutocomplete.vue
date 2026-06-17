@@ -4,12 +4,12 @@
   const props = defineProps<{
     label?: string;
     placeholder?: string;
-    /** Returns matches for a term — typically an entity repository's `search`. */
+
     search: (term: string) => Promise<T[]>;
     toLabel: (item: T) => string;
-    /** Optional secondary line shown under each option. */
+
     toHint?: (item: T) => string;
-    /** When set, an inline "create" row is offered for the typed term. */
+
     createLabel?: (term: string) => string;
     initialText?: string;
   }>();
@@ -55,7 +55,7 @@
   }
 
   function onBlur(): void {
-    // Delay so a click on an option registers before the menu closes.
+
     window.setTimeout(() => { open.value = false; }, 120);
   }
 

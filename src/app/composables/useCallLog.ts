@@ -11,7 +11,6 @@ export function useCallLog() {
     searchFields: (entry) => [entry.contactName, entry.company, entry.phone, entry.notes]
   });
 
-  // The collection's search-filtered list, presented most-recent-call-first.
   const entries = computed(() =>
     [...filtered.value].sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))
   );

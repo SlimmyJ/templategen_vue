@@ -1,14 +1,8 @@
 import type { AddressInfo } from "./sharedModels";
 import type { Identifiable } from "../repositories/interfaces/ICollectionRepository";
 
-/**
- * Shared domain entities — the records the C# API will own as database tables.
- * Anything referenced across features (a customer linked from both a request and
- * a call) lives here as a first-class record with a stable `id`, instead of being
- * copied around as loose text.
- */
 export type EntityBase = Identifiable & {
-  /** ISO timestamps, set by the backend (optional while running locally). */
+
   createdAt?: string;
   updatedAt?: string;
 };

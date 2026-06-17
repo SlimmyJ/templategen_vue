@@ -2,12 +2,6 @@ import type { Identifiable } from "../repositories/interfaces/ICollectionReposit
 import { LocalCollectionRepository } from "../repositories/local/LocalCollectionRepository";
 import type { IEntityRepository } from "./entityRepository";
 
-/**
- * localStorage-backed {@link IEntityRepository}. Reuses {@link LocalCollectionRepository}
- * for storage and adds client-side search, wrapping everything in resolved promises
- * so call sites are already async — swapping in {@link HttpEntityRepository} later
- * is invisible to them.
- */
 export class LocalEntityRepository<T extends Identifiable> implements IEntityRepository<T> {
   private readonly store: LocalCollectionRepository<T>;
   private readonly searchFields: (item: T) => string[];

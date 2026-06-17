@@ -1,4 +1,4 @@
-/* ── Grid backgrounds ── */
+
 :root {
   --grid-10: repeating-linear-gradient(0deg, #f2f2f2 0 1px, transparent 1px 10px),
              repeating-linear-gradient(90deg, #f2f2f2 0 1px, transparent 1px 10px);
@@ -10,7 +10,6 @@
              repeating-linear-gradient(90deg, #ebebeb 0 1px, transparent 1px 40px);
 }
 
-/* ── Toolbar ── */
 .designer-toolbar {
   display: flex;
   align-items: center;
@@ -35,7 +34,6 @@
   margin: 0 3px;
 }
 
-/* Palette drag buttons */
 .palette-btn {
   width: 32px;
   height: 32px;
@@ -53,7 +51,6 @@
 .palette-btn:hover  { background: #eef3ff; border-color: #a0b8e0; }
 .palette-btn:active { cursor: grabbing; }
 
-/* Toolbar buttons */
 .dt-btn {
   height: 28px;
   padding: 0 8px;
@@ -78,7 +75,6 @@
 
 .dt-label { font-size: 11px; }
 
-/* Grid select */
 .dt-select {
   height: 28px;
   padding: 0 4px;
@@ -90,7 +86,6 @@
   cursor: pointer;
 }
 
-/* Snap toggle */
 .dt-switch {
   display: inline-flex;
   align-items: center;
@@ -102,7 +97,6 @@
   user-select: none;
 }
 
-/* Color picker */
 .color-zone {
   display: inline-flex;
   align-items: center;
@@ -140,7 +134,6 @@
 .dt-label-input:disabled { opacity: 0.4; cursor: not-allowed; background: #f3f3f3; }
 .dt-label-input:focus { outline: none; border-color: #357bb7; }
 
-/* Clear selected segment */
 .seg-clear {
   width: 22px;
   height: 24px;
@@ -159,7 +152,6 @@
 .seg-clear:hover:not(:disabled) { background: #ffeef0; border-color: #f5b8bc; color: #900; }
 .seg-clear:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* Recent color swatches */
 .color-swatch {
   width: 20px;
   height: 20px;
@@ -171,7 +163,6 @@
 }
 .color-swatch:hover { transform: scale(1.15); }
 
-/* Category chips */
 .cat-chip {
   height: 28px;
   padding: 0 10px 0 8px;
@@ -200,7 +191,6 @@
   flex-shrink: 0;
 }
 
-/* ── Board ── */
 .designer-board {
   position: relative;
   width: 100%;
@@ -212,7 +202,6 @@
   overflow: hidden;
 }
 
-/* Schema title */
 .board-title {
   position: absolute;
   top: 10px;
@@ -234,7 +223,6 @@
 .board-title:focus { background: #fff; box-shadow: 0 0 0 1px #357bb7; }
 .board-title::placeholder { color: #c4ccd6; font-weight: 600; }
 
-/* Legend */
 .board-legend {
   position: absolute;
   top: 10px;
@@ -275,7 +263,6 @@
   box-shadow: inset 0 0 0 2px #357bb7, inset 0 1px 3px rgba(0,0,0,0.04);
 }
 
-/* ── SVG overlay ── */
 .board-overlay {
   position: absolute;
   inset: 0;
@@ -308,7 +295,6 @@
   user-select: none;
 }
 
-/* ── Nodes ── */
 .d-node {
   position: absolute;
   z-index: 2;
@@ -373,7 +359,6 @@
 .d-node:hover .node-delete { display: flex; }
 .node-delete:hover { background: #aa0000; }
 
-/* ── Notes ── */
 .d-note {
   position: absolute;
   z-index: 3;
@@ -426,7 +411,6 @@
   color: #333;
 }
 
-/* ── Empty hint ── */
 .board-hint {
   position: absolute;
   inset: 0;

@@ -1,19 +1,6 @@
 import type { Identifiable } from "../repositories/interfaces/ICollectionRepository";
 import type { IEntityRepository } from "./entityRepository";
 
-/**
- * REST client implementation of {@link IEntityRepository}. This file doubles as
- * the contract the C# API must satisfy for a given `resource` (e.g. "customers"):
- *
- *   GET    {base}/{resource}            -> T[]              (list)
- *   GET    {base}/{resource}?q={term}   -> T[]              (search)
- *   GET    {base}/{resource}/{id}       -> T  | 404         (get)
- *   PUT    {base}/{resource}/{id}       -> T                (upsert; body = T)
- *   DELETE {base}/{resource}/{id}       -> 204              (remove)
- *
- * IDs are generated client-side (uuid), so create and update both use PUT/{id}
- * as an idempotent upsert. The backend should set `createdAt`/`updatedAt`.
- */
 export class HttpEntityRepository<T extends Identifiable> implements IEntityRepository<T> {
   private readonly baseUrl: string;
   private readonly resource: string;

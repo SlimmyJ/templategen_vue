@@ -1,10 +1,7 @@
 import { ref } from "vue";
 import { ClipboardService } from "../services/clipboardService";
 
-/**
- * Copies HTML to the clipboard and exposes a human-readable status line
- * for the last copy attempt.
- */
+
 export function useCopyStatus() {
   const clipboard = new ClipboardService();
   const status = ref<string>("");

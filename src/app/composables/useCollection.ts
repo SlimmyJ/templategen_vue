@@ -2,17 +2,12 @@ import { computed, ref, type Ref } from "vue";
 import type { Identifiable, ICollectionRepository } from "../repositories/interfaces/ICollectionRepository";
 
 export type UseCollectionOptions<T> = {
-  /** Seed records inserted on first use when the collection is empty. */
+
   seed?: T[];
-  /** Strings to match the search term against for {@link useCollection}'s `filtered`. */
+
   searchFields?: (item: T) => string[];
 };
 
-/**
- * Reactive CRUD over an {@link ICollectionRepository}: a live list, a search box
- * and add/update/remove that persist and reload. The shared backbone behind the
- * installer catalog and the call-log.
- */
 export function useCollection<T extends Identifiable>(
   repository: ICollectionRepository<T>,
   options: UseCollectionOptions<T> = {}

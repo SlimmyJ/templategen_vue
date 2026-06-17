@@ -20,6 +20,16 @@
   const renderer = new TemplateRenderer();
   const renderedInstaller = computed(() => renderer.renderInspectionInstallerEmail(request));
 
+  const warnings = computed<string[]>(() => {
+    const list: string[] = [];
+    if (!request.items.some((item) => item.problemDescription.trim() || item.idcode.trim() || item.solution.trim())) {
+      list.push("Geen nazicht ingevuld");
+    }
+    if (!request.contact.name.trim()) list.push("Contactpersoon ontbreekt");
+    if (!request.location.street.trim() && !request.location.postalCity.trim()) list.push("Locatie ontbreekt");
+    return list;
+  });
+
   async function copyInstaller(): Promise<void> {
     await copyHtml(renderedInstaller.value.htmlBody, "Installateur mail gekopieerd (HTML).");
   }
@@ -79,6 +89,7 @@
       :installer-html="renderedInstaller.htmlBody"
       :installer-subject="renderedInstaller.subject"
       :status="status"
+      :warnings="warnings"
       :show-customer-tab="false"
       :show-calendar-copy="false"
       @copy-installer="copyInstaller"

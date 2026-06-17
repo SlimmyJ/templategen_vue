@@ -36,6 +36,15 @@
   const renderedCustomer = computed(() => renderer.renderCustomerEmail(request, catalog.activeInstaller));
   const renderedCalendar = computed(() => renderer.renderCalendarSnippet(request));
 
+  const warnings = computed<string[]>(() => {
+    const list: string[] = [];
+    const installer = catalog.activeInstaller;
+    if (!installer.companyName.trim() && !installer.contactPerson.trim()) list.push("Geen installateur gekozen");
+    if (!request.contact.name.trim()) list.push("Contactpersoon ontbreekt");
+    if (!request.location.street.trim() && !request.location.postalCity.trim()) list.push("Locatie ontbreekt");
+    return list;
+  });
+
   const activeTab = ref<PreviewTab>("installer");
 
   async function copyInstaller(): Promise<void> {
@@ -113,6 +122,7 @@
       :installer-subject="renderedInstaller.subject"
       :customer-subject="renderedCustomer.subject"
       :status="status"
+      :warnings="warnings"
       @update:active-tab="activeTab = $event"
       @copy-installer="copyInstaller"
       @copy-customer="copyCustomer"

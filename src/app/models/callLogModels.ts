@@ -9,28 +9,25 @@ export type CallOutcome =
   | "callback"
   | "wrong-number";
 
-/** A logged phone call made while planning installations / inspections. */
 export type CallLogEntry = Identifiable & {
   id: string;
-  /** Moment of the call as a `datetime-local` string (`yyyy-MM-ddTHH:mm`). */
+
   at: string;
   contactName: string;
   company: string;
   phone: string;
   direction: CallDirection;
   outcome: CallOutcome;
-  /** Optional follow-up date as a `date` string (`yyyy-MM-dd`) or "". */
+
   followUpDate: string;
   notes: string;
-  /** Optional links to shared entities; "" when not linked. The text fields above
-   *  remain a snapshot of who was called at that moment. */
+
   customerId: string;
   installerId: string;
   createdAt: string;
   updatedAt: string;
 };
 
-/** Editable shape used by the form; `id`/`createdAt` are empty for a new entry. */
 export type CallLogDraft = {
   id: string;
   at: string;
@@ -117,7 +114,6 @@ export function formatCallMoment(at: string): string {
   return `${d}/${m}/${y}${timePart ? ` ${timePart}` : ""}`;
 }
 
-/** "yyyy-MM-dd" → "dd/MM/yyyy". */
 export function formatDate(date: string): string {
   const [y, m, d] = date.split("-");
   if (!y || !m || !d) return date;

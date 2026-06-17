@@ -23,8 +23,10 @@
     type Customer,
     type Installer
   } from "../../models/entities";
+  import { useConfirm } from "../../composables/useConfirm";
 
   const { entries, search, save, remove } = useCallLog();
+  const { confirm } = useConfirm();
 
   const searchCustomers = (term: string): Promise<Customer[]> => customerRepository.search(term);
   const searchInstallers = (term: string): Promise<Installer[]> => installerRepository.search(term);
@@ -88,9 +90,13 @@
     resetForm();
   }
 
-  function onDelete(entry: CallLogEntry): void {
+  async function onDelete(entry: CallLogEntry): Promise<void> {
     const who = entry.contactName.trim() || entry.company.trim() || "deze oproep";
-    if (!window.confirm(`Oproep met ${who} verwijderen?`)) return;
+    const ok = await confirm(`Oproep met ${who} verwijderen?`, {
+      confirmLabel: "Verwijderen",
+      danger: true
+    });
+    if (!ok) return;
     if (editingId.value === entry.id) resetForm();
     remove(entry.id);
   }
