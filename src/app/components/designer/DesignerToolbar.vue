@@ -9,6 +9,7 @@
   const {
     state,
     setGrid,
+    alignNodesToTimeline,
     setSegmentColor,
     setSegmentLabel,
     clearSegment,
@@ -118,6 +119,13 @@
         <input type="checkbox" v-model="state.snapEnabled" />
         <span>Snap</span>
       </label>
+      <button
+        class="dt-btn"
+        title="Lijn alle elementen uit op de tijdlijn"
+        :disabled="state.nodes.length === 0"
+        @click="alignNodesToTimeline">
+        <i class="fa-solid fa-arrows-down-to-line"></i>
+      </button>
     </div>
 
     <div class="dt-divider"></div>

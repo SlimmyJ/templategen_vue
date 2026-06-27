@@ -40,18 +40,21 @@
   );
 
   type DS =
-    | { kind: "node";     id: number; sx: number; sy: number; cx: number; cy: number }
+    | { kind: "node";     id: number; sx: number; sy: number; cx: number; cy: number; ty: number }
     | { kind: "baseline";            sy: number;              cx: number; cy: number }
     | { kind: "note";     id: number; sx: number; sy: number; cx: number; cy: number };
 
   const drag = ref<(DS & { recorded?: boolean }) | null>(null);
+
+  // Magnetic pull (px) that snaps an icon's centre back onto the timeline while dragging.
+  const ROW_SNAP = 12;
 
   function startNodeDrag(e: PointerEvent, nodeId: number): void {
     if (e.button !== 0) return;
     e.stopPropagation();
     const node = state.nodes.find(n => n.id === nodeId);
     if (!node) return;
-    drag.value = { kind: "node", id: nodeId, sx: node.x, sy: node.y, cx: e.clientX, cy: e.clientY };
+    drag.value = { kind: "node", id: nodeId, sx: node.x, sy: node.y, cx: e.clientX, cy: e.clientY, ty: effectiveTimelineY.value };
     document.body.style.cursor = "grabbing";
   }
 
@@ -85,6 +88,8 @@
     if (d.kind === "node") {
       let nx = snapVal(d.sx + dx);
       let ny = snapVal(d.sy + dy);
+      const lineTop = d.ty - 27;
+      if (Math.abs(ny - lineTop) <= ROW_SNAP) ny = lineTop;
       nx = Math.max(0, Math.min(boardW.value - 54, nx));
       ny = Math.max(0, Math.min(boardH.value - 54, ny));
       moveNode(d.id, nx, ny);
@@ -316,7 +321,7 @@
         @blur="commitHistory()"
         @input="setNodeLabel(node.id, ($event.target as HTMLInputElement).value)" />
       <i :class="NODE_ICON_CLASSES[node.type]"></i>
-      <button class="node-delete" title="Verwijder" @pointerdown.stop @click.stop="removeNode(node.id)">×</button>
+      <button class="node-delete" title="Verwijder" @pointerdown.stop.prevent="removeNode(node.id)">×</button>
     </div>
 
     <div

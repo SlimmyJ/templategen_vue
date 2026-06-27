@@ -222,6 +222,14 @@ function removeNode(id: number): void {
   commitHistory();
 }
 
+function alignNodesToTimeline(): void {
+  if (state.nodes.length === 0) return;
+  const target = effectiveTimelineY.value - 27;
+  beginHistory();
+  for (const n of state.nodes) n.y = target;
+  commitHistory();
+}
+
 function addNote(x: number, y: number): DesignerNote {
   beginHistory();
   const note: DesignerNote = { id: state.nextNoteId++, x, y, text: "Opmerking…" };
@@ -466,6 +474,7 @@ export function useDesignerState() {
     moveNode,
     setNodeLabel,
     removeNode,
+    alignNodesToTimeline,
     addNote,
     moveNote,
     updateNoteText,
